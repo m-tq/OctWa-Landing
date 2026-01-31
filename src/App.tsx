@@ -837,6 +837,14 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const isModalOpen = activeAppIndex !== null || activeSdkSection !== null;
+    document.body.classList.toggle('modal-open', isModalOpen);
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
+  }, [activeAppIndex, activeSdkSection]);
+
+  useEffect(() => {
     if (currentPage !== 'main' && currentPage !== 'sdk') {
       return;
     }
