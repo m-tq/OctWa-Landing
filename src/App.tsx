@@ -26,7 +26,7 @@ const apps = [
     screenshotUrl: 'octwa-otc.png',
   },
   {
-    name: 'Octra Poker',
+    name: 'OctWa Poker',
     description: "Multiplayer Texas Hold'em Poker with OCT token betting, powered by the Octra Network.",
     appUrl: 'https://octra-poker.vercel.app/',
     repoUrl: '',
