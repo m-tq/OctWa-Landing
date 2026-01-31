@@ -12,14 +12,14 @@ const screenshots = [
 
 const apps = [
   {
-    name: 'OctWa-DEX',
+    name: 'OctWa DEX',
     description: 'Intent-based DEX for OCT ⇄ ETH swaps. Preview version using Sepolia testnet.',
     appUrl: 'https://octwa-dex.vercel.app/',
     repoUrl: 'https://github.com/m-tq/OctWa-DEX',
     screenshotUrl: 'octwa-dex.png',
   },
   {
-    name: 'OctWa-OTC',
+    name: 'OctWa OTC',
     description: 'Secure P2P OTC trading platform for OCT ⇄ USDC swaps with unique escrow per order.',
     appUrl: 'https://octra-otc.vercel.app/',
     repoUrl: '',
