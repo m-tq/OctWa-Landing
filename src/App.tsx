@@ -954,14 +954,15 @@ export default function App() {
 
   useEffect(() => {
     const shouldLock =
-      lightboxOpen || currentPage === 'main' || currentPage === 'sdk' || currentPage === 'apps' || currentPage === 'tools';
+      lightboxOpen ||
+      (!isMobile && (currentPage === 'main' || currentPage === 'sdk' || currentPage === 'apps' || currentPage === 'tools'));
     document.documentElement.style.overflow = shouldLock ? 'hidden' : 'auto';
     document.body.style.overflow = shouldLock ? 'hidden' : 'auto';
     return () => {
       document.documentElement.style.overflow = '';
       document.body.style.overflow = '';
     };
-  }, [lightboxOpen, currentPage]);
+  }, [lightboxOpen, currentPage, isMobile]);
 
   useEffect(() => {
     if (currentPage !== 'main' && lightboxOpen) {

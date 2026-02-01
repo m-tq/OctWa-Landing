@@ -1063,7 +1063,41 @@ h1, h2, h3 {
   font-size: 0.85rem;
 }
 
+@media (max-width: 1024px) {
+  .apps-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 768px) {
+  .top-nav {
+    position: sticky;
+    height: auto;
+    padding: 0.5rem 0;
+  }
+
+  .top-nav-inner {
+    padding: 0 1rem;
+  }
+
+  .top-nav-links {
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    justify-content: center;
+  }
+
+  .top-nav-link {
+    font-size: 0.8rem;
+  }
+
+  .page {
+    padding-top: 0;
+  }
+
+  .slides-container {
+    padding-top: 0;
+  }
+
   .lightbox-nav {
     width: 40px;
     height: 40px;
@@ -1359,6 +1393,10 @@ h1, h2, h3 {
 }
 
 @media (max-width: 480px) {
+  .apps-grid {
+    grid-template-columns: 1fr;
+  }
+
   .slide {
     padding: 1.5rem 1rem;
   }
