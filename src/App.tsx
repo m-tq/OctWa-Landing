@@ -22,14 +22,14 @@ const apps = [
     name: 'OctWa OTC',
     description: 'Secure P2P OTC trading platform for OCT ⇄ USDC swaps with unique escrow per order.',
     appUrl: 'https://octra-otc.vercel.app/',
-    repoUrl: '',
+    repoUrl: 'https://github.com/m-tq/Octra-OTC',
     screenshotUrl: 'octwa-otc.png',
   },
   {
     name: 'OctWa Poker',
     description: "Multiplayer Texas Hold'em Poker with OCT token betting, powered by the Octra Network.",
     appUrl: 'https://octra-poker.vercel.app/',
-    repoUrl: '',
+    repoUrl: 'https://github.com/m-tq/OctWa-Poker',
     screenshotUrl: 'octra-poker.png',
   },
   {
