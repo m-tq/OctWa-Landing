@@ -1,12 +1,50 @@
-:root {
-  --background: #1a1a1a;
-  --foreground: #e5e5e5;
-  --primary: #0000db;
-  --primary-foreground: #ffffff;
-  --muted: #292929;
-  --muted-foreground: #8c8c8c;
-  --border: #383838;
-  --card: #1f1f1f;
+:root,
+.light {
+  --background: 0 0% 100%;
+  --foreground: 0 0% 3.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 3.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 3.9%;
+  --primary: 234 100% 61%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 14% 93%;
+  --secondary-foreground: 0 0% 9%;
+  --muted: 220 14% 93%;
+  --muted-foreground: 0 0% 45.1%;
+  --accent: 220 14% 80%;
+  --accent-foreground: 0 0% 9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 220 13% 82%;
+  --input: 220 13% 82%;
+  --ring: 0 0% 3.9%;
+  --private-primary: 170 100% 45%;
+  --private-primary-foreground: 0 0% 100%;
+}
+
+.dark {
+  --background: 0 0% 10.2%;
+  --foreground: 0 0% 90%;
+  --card: 0 0% 12%;
+  --card-foreground: 0 0% 90%;
+  --popover: 0 0% 12%;
+  --popover-foreground: 0 0% 90%;
+  --primary: 234 100% 61%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 16%;
+  --secondary-foreground: 0 0% 90%;
+  --muted: 0 0% 16%;
+  --muted-foreground: 0 0% 55%;
+  --accent: 0 0% 16%;
+  --accent-foreground: 0 0% 90%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 90%;
+  --border: 0 0% 22%;
+  --input: 0 0% 22%;
+  --ring: 240 91% 60%;
+  --private-primary: 170 100% 45%;
+  --private-primary-foreground: 0 0% 100%;
 }
 
 *, *::before, *::after {
@@ -23,12 +61,96 @@ html {
 
 body {
   font-family: 'Fira Code', monospace;
-  background-color: var(--background);
-  color: var(--foreground);
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
   height: 100vh;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--border));
+}
+
+::selection {
+  background: hsl(var(--primary) / 0.3);
+  color: hsl(var(--foreground));
+}
+
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+.private-mode {
+  --primary: var(--private-primary);
+  --primary-foreground: var(--private-primary-foreground);
+}
+
+.private-accent {
+  color: hsl(var(--private-primary));
+}
+
+.private-bg {
+  background: hsl(var(--private-primary));
+  color: hsl(var(--private-primary-foreground));
+}
+
+.private-bg-subtle {
+  background: hsl(var(--private-primary) / 0.1);
+}
+
+.private-border {
+  border-color: hsl(var(--private-primary) / 0.3);
+}
+
+.private-text {
+  color: hsl(var(--private-primary));
+}
+
+.btn-private {
+  background: hsl(var(--private-primary));
+  color: hsl(var(--private-primary-foreground));
+  border-color: hsl(var(--private-primary));
+}
+
+.btn-private:hover {
+  background: hsl(var(--private-primary) / 0.85);
+}
+
+.btn-private-outline {
+  background: transparent;
+  color: hsl(var(--private-primary));
+  border-color: hsl(var(--private-primary));
+}
+
+.btn-private-outline:hover {
+  background: hsl(var(--private-primary) / 0.1);
+}
+
+.badge-private {
+  background: hsl(var(--private-primary) / 0.15);
+  color: hsl(var(--private-primary));
+  border: 1px solid hsl(var(--private-primary) / 0.3);
+}
+
+.tabs-private {
+  border-bottom: 1px solid hsl(var(--private-primary) / 0.3);
 }
 
 .top-nav {
@@ -41,8 +163,8 @@ body {
   align-items: center;
   font-family: inherit;
   font-weight: 400;
-  background: rgba(26, 26, 26, 0.65);
-  border-bottom: 1px solid var(--border);
+  background: hsl(var(--background) / 0.7);
+  border-bottom: 1px solid hsl(var(--border));
   backdrop-filter: blur(8px);
   z-index: 200;
 }
@@ -60,13 +182,13 @@ body {
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
 }
 
 .top-nav-logo {
   border: none;
   background: transparent;
-  color: var(--foreground);
+  color: hsl(var(--foreground));
   font-weight: 600;
   font-size: 1rem;
   cursor: pointer;
@@ -75,12 +197,13 @@ body {
 .top-nav-links {
   display: flex;
   gap: 28px;
+  justify-content: flex-start;
 }
 
 .top-nav-link {
   border: none;
   background: transparent;
-  color: var(--muted-foreground);
+  color: hsl(var(--muted-foreground));
   font-size: 0.9rem;
   font-family: inherit;
   font-weight: 400;
@@ -89,7 +212,36 @@ body {
 }
 
 .top-nav-link:hover {
-  color: var(--foreground);
+  color: hsl(var(--foreground));
+}
+
+.top-nav-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.theme-toggle {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: hsl(var(--foreground));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.theme-toggle:hover {
+  color: hsl(var(--primary));
+}
+
+.theme-toggle svg {
+  width: 18px;
+  height: 18px;
 }
 
 .octra-background {
@@ -156,7 +308,7 @@ body {
 .nav-dot {
   width: 12px;
   height: 12px;
-  background: var(--border);
+  background: hsl(var(--border));
   border: none;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -164,11 +316,11 @@ body {
 }
 
 .nav-dot:hover {
-  background: var(--muted-foreground);
+  background: hsl(var(--muted-foreground));
 }
 
 .nav-dot.active {
-  background: var(--primary);
+  background: hsl(var(--primary));
   transform: scale(1.2);
 }
 
@@ -180,7 +332,7 @@ body {
   transform: translateY(-50%);
   white-space: nowrap;
   font-size: 0.75rem;
-  color: var(--muted-foreground);
+  color: hsl(var(--muted-foreground));
   opacity: 0;
   transition: opacity 0.3s ease;
   pointer-events: none;
@@ -199,7 +351,7 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
-  color: var(--muted-foreground);
+  color: hsl(var(--muted-foreground));
   font-size: 0.75rem;
   animation: bounce 2s infinite;
   z-index: 100;
@@ -246,7 +398,7 @@ h1, h2, h3 {
 
 .slide-subtitle {
   font-size: 1.25rem;
-  color: var(--muted-foreground);
+  color: hsl(var(--muted-foreground));
   margin-bottom: 2rem;
   max-width: 600px;
   margin-left: auto;
@@ -254,14 +406,18 @@ h1, h2, h3 {
 }
 
 .slide-description {
-  color: var(--muted-foreground);
+  color: hsl(var(--muted-foreground));
   max-width: 700px;
   margin: 0 auto;
   font-size: 0.95rem;
 }
 
 .slide-description strong {
-  color: var(--foreground);
+  color: hsl(var(--foreground));
+}
+
+.slide-description strong.private-accent {
+  color: hsl(var(--private-primary));
 }
 
 .btn {
@@ -269,7 +425,8 @@ h1, h2, h3 {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.875rem 1.75rem;
+  height: 36px;
+  padding: 0 16px;
   font-family: inherit;
   font-size: 0.875rem;
   font-weight: 500;
@@ -284,24 +441,25 @@ h1, h2, h3 {
 }
 
 .btn-primary {
-  background-color: var(--primary);
-  color: var(--primary-foreground);
-  border-color: var(--primary);
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-color: hsl(var(--primary));
 }
 
 .btn-primary:hover {
-  background-color: #0000b0;
+  background-color: hsl(var(--primary) / 0.85);
 }
 
 .btn-secondary {
-  background-color: var(--card);
-  color: var(--foreground);
-  border-color: var(--border);
+  background-color: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+  border-color: hsl(var(--input));
 }
 
 .btn-secondary:hover {
-  background-color: var(--muted);
-  border-color: var(--muted-foreground);
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+  border-color: hsl(var(--accent));
 }
 
 .cta-group {
@@ -320,14 +478,14 @@ h1, h2, h3 {
 }
 
 .feature-card {
-  background: var(--card);
-  border: 1px solid var(--border);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   padding: 1.5rem;
   transition: border-color 0.3s ease, transform 0.3s ease;
 }
 
 .feature-card:hover {
-  border-color: var(--primary);
+  border-color: hsl(var(--primary));
   transform: translateY(-4px);
 }
 
@@ -335,7 +493,12 @@ h1, h2, h3 {
   width: 2rem;
   height: 2rem;
   margin-bottom: 1rem;
-  color: var(--primary);
+  color: hsl(var(--primary));
+}
+
+.feature-card.private .feature-title,
+.feature-card.private .feature-icon {
+  color: hsl(var(--private-primary));
 }
 
 .feature-title {
@@ -345,7 +508,7 @@ h1, h2, h3 {
 
 .feature-desc {
   font-size: 0.8rem;
-  color: var(--muted-foreground);
+  color: hsl(var(--muted-foreground));
 }
 
 .modes-grid {
@@ -357,14 +520,14 @@ h1, h2, h3 {
 }
 
 .mode-card {
-  background: var(--card);
-  border: 1px solid var(--border);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   padding: 2rem;
   transition: all 0.3s ease;
 }
 
 .mode-card.private {
-  border-color: var(--primary);
+  border-color: hsl(var(--private-primary));
 }
 
 .mode-card:hover {
@@ -380,7 +543,7 @@ h1, h2, h3 {
 }
 
 .mode-desc {
-  color: var(--muted-foreground);
+  color: hsl(var(--muted-foreground));
   font-size: 0.875rem;
 }
 
@@ -397,20 +560,20 @@ h1, h2, h3 {
   align-items: flex-start;
   gap: 1rem;
   padding: 1.25rem;
-  background: var(--card);
-  border: 1px solid var(--border);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   transition: all 0.3s ease;
 }
 
 .security-item:hover {
-  border-color: var(--primary);
+  border-color: hsl(var(--primary));
   transform: translateY(-2px);
 }
 
 .security-icon {
   width: 1.5rem;
   height: 1.5rem;
-  color: var(--primary);
+  color: hsl(var(--primary));
   flex-shrink: 0;
   margin-top: 0.25rem;
 }
@@ -423,13 +586,14 @@ h1, h2, h3 {
 
 .security-text span {
   font-size: 0.8rem;
-  color: var(--muted-foreground);
+  color: hsl(var(--muted-foreground));
 }
 
 .opensource-icon {
   width: 4rem;
   height: 4rem;
   margin-bottom: 1.5rem;
+  color: hsl(var(--foreground));
   transition: transform 0.3s ease;
 }
 
@@ -445,7 +609,7 @@ h1, h2, h3 {
 }
 
 .footer-link {
-  color: var(--muted-foreground);
+  color: hsl(var(--muted-foreground));
   transition: color 0.2s ease;
   display: flex;
   align-items: center;
@@ -453,7 +617,7 @@ h1, h2, h3 {
 }
 
 .footer-link:hover {
-  color: var(--foreground);
+  color: hsl(var(--foreground));
 }
 
 .footer-link svg {
@@ -463,7 +627,7 @@ h1, h2, h3 {
 
 .tagline {
   font-size: 0.875rem;
-  color: var(--muted-foreground);
+  color: hsl(var(--muted-foreground));
   margin-top: 3rem;
 }
 
@@ -485,20 +649,20 @@ h1, h2, h3 {
   width: 100%;
   max-width: 200px;
   height: auto;
-  border: 1px solid var(--border);
+  border: 1px solid hsl(var(--border));
   transition: transform 0.3s ease, border-color 0.3s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .screenshot-item img:hover {
   transform: scale(1.05);
-  border-color: var(--primary);
+  border-color: hsl(var(--primary));
   cursor: pointer;
 }
 
 .screenshot-item span {
   font-size: 0.8rem;
-  color: var(--muted-foreground);
+  color: hsl(var(--muted-foreground));
 }
 
 .lightbox {
@@ -508,7 +672,7 @@ h1, h2, h3 {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.95);
+  background: hsl(0 0% 0% / 0.92);
   z-index: 1000;
   align-items: center;
   justify-content: center;
@@ -530,14 +694,14 @@ h1, h2, h3 {
 .lightbox-img {
   max-width: 100%;
   max-height: 80vh;
-  border: 1px solid var(--border);
+  border: 1px solid hsl(var(--border));
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
 .lightbox-caption {
   margin-top: 1rem;
   font-size: 1rem;
-  color: var(--foreground);
+  color: hsl(var(--foreground));
 }
 
 .lightbox-close {
@@ -546,7 +710,7 @@ h1, h2, h3 {
   right: 0;
   background: none;
   border: none;
-  color: var(--foreground);
+  color: hsl(var(--foreground));
   font-size: 2rem;
   cursor: pointer;
   padding: 0.5rem;
@@ -555,16 +719,16 @@ h1, h2, h3 {
 }
 
 .lightbox-close:hover {
-  color: var(--primary);
+  color: hsl(var(--primary));
 }
 
 .lightbox-nav {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background: var(--card);
-  border: 1px solid var(--border);
-  color: var(--foreground);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
   width: 48px;
   height: 48px;
   display: flex;
@@ -575,8 +739,8 @@ h1, h2, h3 {
 }
 
 .lightbox-nav:hover {
-  background: var(--primary);
-  border-color: var(--primary);
+  background: hsl(var(--primary));
+  border-color: hsl(var(--primary));
 }
 
 .lightbox-prev {
@@ -591,7 +755,7 @@ h1, h2, h3 {
   position: absolute;
   bottom: -40px;
   font-size: 0.875rem;
-  color: var(--muted-foreground);
+  color: hsl(var(--muted-foreground));
 }
 
 .page {
@@ -670,8 +834,8 @@ h1, h2, h3 {
 }
 
 .app-card {
-  background-color: #1f1f1f;
-  border: 1px solid var(--border);
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   padding: 1.5rem;
   transition: all 0.3s ease;
   display: flex;
@@ -680,8 +844,8 @@ h1, h2, h3 {
 }
 
 .tool-card {
-  background: var(--card);
-  border: 1px solid var(--border);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   padding: 1.5rem;
   transition: all 0.3s ease;
   display: flex;
@@ -691,15 +855,15 @@ h1, h2, h3 {
 
 .app-card:hover, .tool-card:hover {
   transform: translateY(-5px);
-  border-color: var(--primary);
+  border-color: hsl(var(--primary));
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
 }
 
 .app-image {
   width: 100%;
   height: 150px;
-  border: 1px solid var(--border);
-  background: #111;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--muted));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -719,7 +883,7 @@ h1, h2, h3 {
 }
 
 .app-image-placeholder {
-  color: var(--muted-foreground);
+  color: hsl(var(--muted-foreground));
   font-size: 0.85rem;
 }
 
@@ -731,7 +895,7 @@ h1, h2, h3 {
 
 .app-desc, .tool-desc {
   font-size: 0.9rem;
-  color: var(--muted-foreground);
+  color: hsl(var(--muted-foreground));
   line-height: 1.5;
   flex-grow: 1;
 }
@@ -860,8 +1024,8 @@ h1, h2, h3 {
 }
 
 .sdk-card {
-  background-color: #1f1f1f;
-  border: 1px solid var(--border);
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -876,7 +1040,7 @@ h1, h2, h3 {
 }
 
 .sdk-card:hover {
-  border-color: var(--primary);
+  border-color: hsl(var(--primary));
   transform: translateY(-5px);
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
 }
@@ -888,7 +1052,7 @@ h1, h2, h3 {
 
 .sdk-card-desc {
   font-size: 0.85rem;
-  color: var(--muted-foreground);
+  color: hsl(var(--muted-foreground));
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -904,7 +1068,7 @@ h1, h2, h3 {
   list-style: none;
   display: grid;
   gap: 0.5rem;
-  color: var(--muted-foreground);
+  color: hsl(var(--muted-foreground));
   font-size: 0.85rem;
   max-height: 7.5rem;
   overflow: hidden;
@@ -926,21 +1090,21 @@ h1, h2, h3 {
 
 .sdk-list li::before {
   content: '•';
-  color: var(--primary);
+  color: hsl(var(--primary));
   line-height: 1.2;
 }
 
 .sdk-inline-code {
-  background: var(--muted);
-  border: 1px solid var(--border);
+  background: hsl(var(--muted));
+  border: 1px solid hsl(var(--border));
   padding: 0.1rem 0.35rem;
   font-size: 0.8rem;
-  color: var(--foreground);
+  color: hsl(var(--foreground));
 }
 
 .sdk-code-block {
-  border: 1px solid var(--border);
-  background: #141414;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background));
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -956,7 +1120,7 @@ h1, h2, h3 {
 
 .sdk-code-title {
   font-size: 0.8rem;
-  color: var(--muted-foreground);
+  color: hsl(var(--muted-foreground));
 }
 
 .sdk-copy-btn {
@@ -964,8 +1128,8 @@ h1, h2, h3 {
   align-items: center;
   gap: 0.35rem;
   font-size: 0.75rem;
-  color: var(--muted-foreground);
-  border: 1px solid var(--border);
+  color: hsl(var(--muted-foreground));
+  border: 1px solid hsl(var(--border));
   background: transparent;
   padding: 0.2rem 0.5rem;
   cursor: pointer;
@@ -977,13 +1141,13 @@ h1, h2, h3 {
 }
 
 .sdk-copy-btn:hover {
-  color: var(--foreground);
-  border-color: var(--muted-foreground);
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--muted-foreground));
 }
 
 .sdk-copy-btn.is-copied {
-  color: var(--primary);
-  border-color: var(--primary);
+  color: hsl(var(--primary));
+  border-color: hsl(var(--primary));
 }
 
 .sdk-code {
@@ -992,7 +1156,7 @@ h1, h2, h3 {
   white-space: pre-wrap;
   word-break: break-word;
   font-size: 0.76rem;
-  color: var(--foreground);
+  color: hsl(var(--foreground));
 }
 
 .sdk-modal {
@@ -1007,7 +1171,7 @@ h1, h2, h3 {
 .sdk-modal-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
+  background: hsl(0 0% 0% / 0.65);
 }
 
 .sdk-modal-content {
@@ -1015,8 +1179,8 @@ h1, h2, h3 {
   z-index: 1;
   width: min(900px, 92vw);
   max-height: 85vh;
-  background: var(--card);
-  border: 1px solid var(--border);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -1029,7 +1193,7 @@ h1, h2, h3 {
   right: 0.75rem;
   background: transparent;
   border: none;
-  color: var(--foreground);
+  color: hsl(var(--foreground));
   font-size: 1.75rem;
   cursor: pointer;
 }
@@ -1054,9 +1218,9 @@ h1, h2, h3 {
 .sdk-docs {
   margin-top: 2rem;
   padding: 1.5rem;
-  background: var(--card);
-  border: 1px solid var(--border);
-  color: var(--foreground);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
   max-height: 70vh;
   overflow: auto;
   white-space: pre-wrap;
@@ -1078,12 +1242,19 @@ h1, h2, h3 {
 
   .top-nav-inner {
     padding: 0 1rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
   }
 
   .top-nav-links {
     flex-wrap: wrap;
     gap: 0.5rem 1rem;
     justify-content: center;
+  }
+
+  .top-nav-actions {
+    justify-content: flex-end;
   }
 
   .top-nav-link {
@@ -1122,7 +1293,7 @@ h1, h2, h3 {
   bottom: 2rem;
   right: 2rem;
   font-size: 0.75rem;
-  color: var(--muted-foreground);
+  color: hsl(var(--muted-foreground));
   z-index: 100;
 }
 
@@ -1344,6 +1515,7 @@ h1, h2, h3 {
 
   .btn {
     width: 100%;
+    height: auto;
     padding: 0.75rem 1.25rem;
     font-size: 0.8rem;
   }
