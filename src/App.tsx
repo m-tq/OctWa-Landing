@@ -41,6 +41,7 @@ import {
   ExternalLink,
   LayoutGrid,
   Wallet,
+  Menu,
 } from "lucide-react";
 import * as THREE from "three";
 
@@ -803,7 +804,8 @@ const useOctraBackground = (containerRef: RefObject<HTMLDivElement>) => {
     const container = containerRef.current;
     if (!container) return;
 
-    const NODE_COUNT = 800;
+    const isLiteMode = window.innerWidth <= 768;
+    const NODE_COUNT = isLiteMode ? 260 : 800;
     const CLUSTER_CENTERS: [number, number][] = [
       [-0.5, 0.6],
       [0.5, 0.6],
@@ -907,10 +909,14 @@ const useOctraBackground = (containerRef: RefObject<HTMLDivElement>) => {
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
-      powerPreference: "high-performance",
+      powerPreference: isLiteMode ? "low-power" : "high-performance",
     });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(
+      isLiteMode
+        ? Math.min(window.devicePixelRatio, 1.25)
+        : Math.min(window.devicePixelRatio, 2),
+    );
     renderer.setClearColor(0x000000, 0);
     container.appendChild(renderer.domElement);
 
@@ -955,55 +961,63 @@ const useOctraBackground = (containerRef: RefObject<HTMLDivElement>) => {
     const points = new THREE.Points(geometry, material);
     scene.add(points);
 
-    const linePositions: number[] = [];
-    const lineOpacities: number[] = [];
-    const connectionThreshold = 0.25;
+    const showLines = !isLiteMode;
+    let lineGeometry: THREE.BufferGeometry | null = null;
+    let lineMaterial: THREE.ShaderMaterial | null = null;
+    let lineUniforms: { uTime: { value: number }; uResolution: { value: THREE.Vector2 } } | null =
+      null;
 
-    for (let i = 0; i < NODE_COUNT; i++) {
-      for (let j = i + 1; j < NODE_COUNT; j++) {
-        if (clusterIds[i] !== clusterIds[j]) continue;
-        const dx = positions[i * 3] - positions[j * 3];
-        const dy = positions[i * 3 + 1] - positions[j * 3 + 1];
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < connectionThreshold) {
-          linePositions.push(
-            positions[i * 3],
-            positions[i * 3 + 1],
-            0,
-            positions[j * 3],
-            positions[j * 3 + 1],
-            0,
-          );
-          const opacity = 1.0 - dist / connectionThreshold;
-          lineOpacities.push(opacity, opacity);
+    if (showLines) {
+      const linePositions: number[] = [];
+      const lineOpacities: number[] = [];
+      const connectionThreshold = 0.25;
+
+      for (let i = 0; i < NODE_COUNT; i++) {
+        for (let j = i + 1; j < NODE_COUNT; j++) {
+          if (clusterIds[i] !== clusterIds[j]) continue;
+          const dx = positions[i * 3] - positions[j * 3];
+          const dy = positions[i * 3 + 1] - positions[j * 3 + 1];
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < connectionThreshold) {
+            linePositions.push(
+              positions[i * 3],
+              positions[i * 3 + 1],
+              0,
+              positions[j * 3],
+              positions[j * 3 + 1],
+              0,
+            );
+            const opacity = 1.0 - dist / connectionThreshold;
+            lineOpacities.push(opacity, opacity);
+          }
         }
       }
+
+      lineGeometry = new THREE.BufferGeometry();
+      lineGeometry.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(linePositions, 3),
+      );
+      lineGeometry.setAttribute(
+        "opacity",
+        new THREE.Float32BufferAttribute(lineOpacities, 1),
+      );
+
+      lineUniforms = {
+        uTime: { value: 0 },
+        uResolution: { value: new THREE.Vector2(width, height) },
+      };
+      lineMaterial = new THREE.ShaderMaterial({
+        uniforms: lineUniforms,
+        vertexShader: lineVertexShader,
+        fragmentShader: lineFragmentShader,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+      const lines = new THREE.LineSegments(lineGeometry, lineMaterial);
+      scene.add(lines);
     }
-
-    const lineGeometry = new THREE.BufferGeometry();
-    lineGeometry.setAttribute(
-      "position",
-      new THREE.Float32BufferAttribute(linePositions, 3),
-    );
-    lineGeometry.setAttribute(
-      "opacity",
-      new THREE.Float32BufferAttribute(lineOpacities, 1),
-    );
-
-    const lineUniforms = {
-      uTime: { value: 0 },
-      uResolution: { value: new THREE.Vector2(width, height) },
-    };
-    const lineMaterial = new THREE.ShaderMaterial({
-      uniforms: lineUniforms,
-      vertexShader: lineVertexShader,
-      fragmentShader: lineFragmentShader,
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    });
-    const lines = new THREE.LineSegments(lineGeometry, lineMaterial);
-    scene.add(lines);
 
     const startTime = performance.now();
     let frameId = 0;
@@ -1011,7 +1025,7 @@ const useOctraBackground = (containerRef: RefObject<HTMLDivElement>) => {
     const animate = () => {
       const elapsed = (performance.now() - startTime) / 1000;
       uniforms.uTime.value = elapsed;
-      lineUniforms.uTime.value = elapsed;
+      if (lineUniforms) lineUniforms.uTime.value = elapsed;
       renderer.render(scene, camera);
       frameId = requestAnimationFrame(animate);
     };
@@ -1022,7 +1036,7 @@ const useOctraBackground = (containerRef: RefObject<HTMLDivElement>) => {
       const h = container.offsetHeight || window.innerHeight;
       renderer.setSize(w, h);
       uniforms.uResolution.value.set(w, h);
-      lineUniforms.uResolution.value.set(w, h);
+      if (lineUniforms) lineUniforms.uResolution.value.set(w, h);
     };
     window.addEventListener("resize", handleResize);
     const resizeObserver = new ResizeObserver(handleResize);
@@ -1034,8 +1048,8 @@ const useOctraBackground = (containerRef: RefObject<HTMLDivElement>) => {
       cancelAnimationFrame(frameId);
       geometry.dispose();
       material.dispose();
-      lineGeometry.dispose();
-      lineMaterial.dispose();
+      lineGeometry?.dispose();
+      lineMaterial?.dispose();
       renderer.dispose();
       if (renderer.domElement.parentElement === container) {
         container.removeChild(renderer.domElement);
@@ -1078,6 +1092,7 @@ export default function App() {
   const [currentSdkSlide, setCurrentSdkSlide] = useState(0);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 768);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [activeAppIndex, setActiveAppIndex] = useState<number | null>(null);
   const [activeSdkSection, setActiveSdkSection] = useState<number | null>(null);
@@ -1199,7 +1214,6 @@ export default function App() {
   const handleCloseAppModal = useCallback(() => setActiveAppIndex(null), []);
 
   const goToAppSlide = useCallback((index: number) => {
-    if (isMobileRef.current) return;
     if (isAnimatingRef.current || index === currentAppSlideRef.current) return;
     if (index < 0 || index >= apps.length) return;
     isAnimatingRef.current = true;
@@ -1210,7 +1224,6 @@ export default function App() {
   }, []);
 
   const goToToolSlide = useCallback((index: number) => {
-    if (isMobileRef.current) return;
     if (isAnimatingRef.current || index === currentToolSlideRef.current) return;
     if (index < 0 || index >= tools.length) return;
     isAnimatingRef.current = true;
@@ -1257,7 +1270,6 @@ export default function App() {
   );
 
   const goToSlide = useCallback((index: number) => {
-    if (isMobileRef.current) return;
     if (isAnimatingRef.current || index === currentSlideRef.current) return;
     if (index < 0 || index >= totalSlides) return;
     isAnimatingRef.current = true;
@@ -1269,7 +1281,6 @@ export default function App() {
 
   const goToSdkSlide = useCallback(
     (index: number) => {
-      if (isMobileRef.current) return;
       if (isAnimatingRef.current || index === currentSdkSlideRef.current)
         return;
       if (index < 0 || index >= visibleSdkSections.length) return;
@@ -1300,6 +1311,7 @@ export default function App() {
         default:
           break;
       }
+      if (isMobileRef.current) setSidebarOpen(false);
     },
     [currentPage, goToSlide, goToSdkSlide, goToAppSlide, goToToolSlide],
   );
@@ -1367,7 +1379,6 @@ export default function App() {
     if (!activeGoTo || !activeRef) return;
 
     const handleWheel = (event: WheelEvent) => {
-      if (isMobileRef.current) return;
       if (wheelTimeoutRef.current) window.clearTimeout(wheelTimeoutRef.current);
       wheelTimeoutRef.current = window.setTimeout(() => {
         if (event.deltaY > 0) activeGoTo(activeRef.current + 1);
@@ -1375,11 +1386,9 @@ export default function App() {
       }, 50);
     };
     const handleTouchStart = (event: TouchEvent) => {
-      if (isMobileRef.current) return;
       touchStartRef.current = event.changedTouches[0].screenY;
     };
     const handleTouchEnd = (event: TouchEvent) => {
-      if (isMobileRef.current) return;
       touchEndRef.current = event.changedTouches[0].screenY;
       const diff = touchStartRef.current - touchEndRef.current;
       if (Math.abs(diff) > 50) {
@@ -1388,7 +1397,6 @@ export default function App() {
       }
     };
     const handleKeydown = (event: KeyboardEvent) => {
-      if (isMobileRef.current) return;
       if (
         event.key === "ArrowDown" ||
         event.key === "PageDown" ||
@@ -1442,6 +1450,7 @@ export default function App() {
           setCurrentAppSlide(0);
           setCurrentToolSlide(0);
         }
+        setMobileNavOpen(false);
       }
     };
     window.addEventListener("resize", handleResize);
@@ -1451,11 +1460,10 @@ export default function App() {
   useEffect(() => {
     const shouldLock =
       lightboxOpen ||
-      (!isMobile &&
-        (currentPage === "main" ||
-          currentPage === "sdk" ||
-          currentPage === "apps" ||
-          currentPage === "tools"));
+      currentPage === "main" ||
+      currentPage === "sdk" ||
+      currentPage === "apps" ||
+      currentPage === "tools";
     document.documentElement.style.overflow = shouldLock ? "hidden" : "auto";
     document.body.style.overflow = shouldLock ? "hidden" : "auto";
     return () => {
@@ -1466,6 +1474,7 @@ export default function App() {
 
   useEffect(() => {
     if (lightboxOpen) setLightboxOpen(false);
+    setMobileNavOpen(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
 
@@ -1493,6 +1502,21 @@ export default function App() {
     () => activeLightboxImages[currentImageIndex] || activeLightboxImages[0],
     [currentImageIndex, activeLightboxImages],
   );
+
+  const currentPageTitle = useMemo(() => {
+    switch (currentPage) {
+      case "main":
+        return "Home";
+      case "sdk":
+        return "SDK";
+      case "apps":
+        return "Apps";
+      case "tools":
+        return "Tools";
+      default:
+        return "Home";
+    }
+  }, [currentPage]);
 
   /* ── Render helpers ── */
   const renderSdkSectionContent = (
@@ -1533,27 +1557,30 @@ export default function App() {
       {/* ─── Fixed Header ─── */}
       <header className="top-nav">
         <div className="top-nav-inner">
-          {/* Left: Logo + App Name */}
-          <button
-            type="button"
-            className="top-nav-brand"
-            onClick={() => {
-              setCurrentPage("main");
-              goToSlide(0);
-            }}
-          >
-            <OctwaLogo size={22} />
-            <span>OctWa</span>
-          </button>
+          <div className="top-nav-left">
+            <button
+              type="button"
+              className="top-nav-brand"
+              onClick={() => {
+                setCurrentPage("main");
+                goToSlide(0);
+                setMobileNavOpen(false);
+              }}
+            >
+              <OctwaLogo size={22} />
+              <span>OctWa</span>
+            </button>
+            <span className="top-nav-title">{currentPageTitle}</span>
+          </div>
 
-          {/* Center: Navigation Menu */}
-          <nav className="top-nav-links">
+          <nav className={`top-nav-links${mobileNavOpen ? " is-open" : ""}`}>
             <button
               type="button"
               className={`top-nav-link${currentPage === "main" ? " active" : ""}`}
               onClick={() => {
                 setCurrentPage("main");
                 goToSlide(0);
+                setMobileNavOpen(false);
               }}
             >
               <Home size={15} /> Home
@@ -1564,6 +1591,7 @@ export default function App() {
               onClick={() => {
                 setCurrentPage("sdk");
                 setCurrentSdkSlide(0);
+                setMobileNavOpen(false);
               }}
             >
               <BookOpen size={15} /> SDK
@@ -1571,20 +1599,25 @@ export default function App() {
             <button
               type="button"
               className={`top-nav-link${currentPage === "apps" ? " active" : ""}`}
-              onClick={() => setCurrentPage("apps")}
+              onClick={() => {
+                setCurrentPage("apps");
+                setMobileNavOpen(false);
+              }}
             >
               <LayoutGrid size={15} /> Apps
             </button>
             <button
               type="button"
               className={`top-nav-link${currentPage === "tools" ? " active" : ""}`}
-              onClick={() => setCurrentPage("tools")}
+              onClick={() => {
+                setCurrentPage("tools");
+                setMobileNavOpen(false);
+              }}
             >
               <Wrench size={15} /> Tools
             </button>
           </nav>
 
-          {/* Right: Theme Toggle */}
           <div className="top-nav-actions">
             <button
               type="button"
@@ -1598,14 +1631,32 @@ export default function App() {
             >
               {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
             </button>
+            <button
+              type="button"
+              className="mobile-menu-toggle"
+              onClick={() => setMobileNavOpen((prev) => !prev)}
+              aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}
+              aria-expanded={mobileNavOpen}
+            >
+              <Menu size={18} />
+            </button>
           </div>
         </div>
       </header>
 
       {/* ─── App Body: Sidebar + Main ─── */}
       <div className="app-body">
-        {/* Sidebar */}
-        <aside className={`sidebar${sidebarOpen ? "" : " collapsed"}`}>
+        <button
+          type="button"
+          className={`mobile-sidebar-toggle${sidebarOpen ? " is-open" : ""}`}
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          aria-label={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+        >
+          {sidebarOpen ? "‹" : "›"}
+        </button>
+        <aside
+          className={`sidebar${sidebarOpen ? " mobile-open" : " collapsed"}`}
+        >
           <button
             type="button"
             className="sidebar-toggle"
@@ -1650,9 +1701,7 @@ export default function App() {
                     className="slides-wrapper"
                     style={
                       {
-                        "--slides-offset": isMobile
-                          ? "0%"
-                          : `-${currentSlide * 100}%`,
+                        "--slides-offset": `-${currentSlide * 100}%`,
                       } as CSSProperties
                     }
                   >
@@ -1917,9 +1966,7 @@ export default function App() {
                     className="sdk-slides-wrapper"
                     style={
                       {
-                        "--sdk-offset": isMobile
-                          ? "0%"
-                          : `-${currentSdkSlide * 100}%`,
+                        "--sdk-offset": `-${currentSdkSlide * 100}%`,
                       } as CSSProperties
                     }
                   >
@@ -1991,9 +2038,7 @@ export default function App() {
                     className="slides-wrapper"
                     style={
                       {
-                        "--slides-offset": isMobile
-                          ? "0%"
-                          : `-${currentAppSlide * 100}%`,
+                        "--slides-offset": `-${currentAppSlide * 100}%`,
                       } as CSSProperties
                     }
                   >
@@ -2083,9 +2128,7 @@ export default function App() {
                     className="slides-wrapper"
                     style={
                       {
-                        "--slides-offset": isMobile
-                          ? "0%"
-                          : `-${currentToolSlide * 100}%`,
+                        "--slides-offset": `-${currentToolSlide * 100}%`,
                       } as CSSProperties
                     }
                   >
