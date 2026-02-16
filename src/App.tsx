@@ -70,8 +70,8 @@ const apps = [
     name: "OctWa dApp Starter",
     description:
       "A comprehensive demonstration of the complete Octra blockchain ecosystem integration.",
-    appUrl: "http://localhost:3001/",
-    repoUrl: "https://github.com/m-tq/OctWa/tree/master/Sample",
+    appUrl: "https://analyzer.octwa.pw/",
+    repoUrl: "https://github.com/m-tq/Starter",
     screenshotUrl: "starter.png",
     icon: () => (
       <svg width="18" height="18" viewBox="0 0 64 64" fill="none">
