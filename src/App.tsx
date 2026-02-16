@@ -25,9 +25,8 @@ import {
   ChevronRight,
   X,
   Copy,
+  Cpu,
   Check,
-  PanelLeftClose,
-  PanelLeftOpen,
   Home,
   Info,
   Zap,
@@ -58,36 +57,32 @@ const screenshots = [
 
 const apps = [
   {
-    name: "OctWa DEX",
-    description:
-      "Intent-based DEX for OCT ⇄ ETH swaps. Preview version using Sepolia testnet.",
-    appUrl: "https://octwa-dex.vercel.app/",
-    repoUrl: "https://github.com/m-tq/OctWa-DEX",
-    screenshotUrl: "octwa-dex.png",
-  },
-  {
-    name: "OctWa OTC",
-    description:
-      "Secure P2P OTC trading platform for OCT ⇄ USDC swaps with unique escrow per order.",
-    appUrl: "https://octra-otc.vercel.app/",
-    repoUrl: "https://github.com/m-tq/Octra-OTC",
-    screenshotUrl: "octwa-otc.png",
-  },
-  {
-    name: "OctWa Poker",
-    description:
-      "Multiplayer Texas Hold'em Poker with OCT token betting, powered by the Octra Network.",
-    appUrl: "https://octra-poker.vercel.app/",
-    repoUrl: "https://github.com/m-tq/OctWa-Poker",
-    screenshotUrl: "octra-poker.png",
-  },
-  {
     name: "OctWa Analyzer",
     description:
       "A lightweight web UI for browsing Octra transactions, addresses, and epochs.",
     appUrl: "https://analyzer.octwa.pw/",
     repoUrl: "https://github.com/m-tq/OctWa-Analyzer",
-    screenshotUrl: "octlook.png",
+    screenshotUrl: "analyzer.png",
+    icon: Cpu,
+  },
+  {
+    name: "OctWa dApp Starter",
+    description:
+      "A comprehensive demonstration of the complete Octra blockchain ecosystem integration.",
+    appUrl: "http://localhost:3001/",
+    repoUrl: "https://github.com/m-tq/OctWa/tree/master/Sample",
+    screenshotUrl: "starter.png",
+    icon: () => (
+      <svg width="18" height="18" viewBox="0 0 64 64" fill="none">
+        <circle cx="32" cy="32" r="30" fill="currentColor"/>
+        <path d="M16 22C16 20.3431 17.3431 19 19 19H45C46.6569 19 48 20.3431 48 22V24H16V22Z" fill="white" opacity="0.9"/>
+        <rect x="16" y="24" width="32" height="20" rx="2" fill="white"/>
+        <rect x="20" y="28" width="24" height="3" rx="1.5" fill="currentColor" opacity="0.3"/>
+        <rect x="20" y="33" width="16" height="3" rx="1.5" fill="currentColor" opacity="0.3"/>
+        <circle cx="40" cy="38" r="3.5" fill="currentColor"/>
+        <circle cx="40" cy="38" r="1.5" fill="white"/>
+      </svg>
+    ),
   },
 ];
 
@@ -140,9 +135,14 @@ type SdkSection = {
 
 const sdkSections: SdkSection[] = [
   {
-    title: "OctWa SDK",
+    title: "OctWa SDK v2.0.0",
     description:
-      "SDK for integrating dApps with OCTWA Wallet browser extension.",
+      "A stateless, deterministic transaction builder for integrating dApps with OctWa Wallet Extension. The SDK provides type-safe APIs, canonical serialization, domain separation for security, and comprehensive error handling.",
+    bullets: [
+      <>SDK is stateless and never handles private keys - only builds and validates transactions.</>,
+      <>Wallet Extension is the final authority for all signing and validation.</>,
+      <>Capability-based authorization gives users fine-grained control over dApp permissions.</>,
+    ],
     actions: (
       <div className="cta-group">
         <a
@@ -151,7 +151,7 @@ const sdkSections: SdkSection[] = [
           target="_blank"
           rel="noopener"
         >
-          <ExternalLink size={16} /> Open packages/sdk folder
+          <ExternalLink size={16} /> View SDK Documentation
         </a>
       </div>
     ),
@@ -159,46 +159,64 @@ const sdkSections: SdkSection[] = [
   {
     title: "Installation",
     description:
-      "Install the package and keep your dApp integrations simple and secure.",
-    samples: [{ title: "Install via npm", code: "npm install @octwa/sdk" }],
+      "Install the package via npm to start building your Octra dApp.",
+    samples: [
+      { 
+        title: "Install via npm", 
+        code: "npm install @octwa/sdk" 
+      },
+      {
+        title: "Import in your project",
+        code: `import { OctraSDK } from '@octwa/sdk';
+import type { Connection, Capability } from '@octwa/sdk';`
+      }
+    ],
   },
   {
     title: "Quick Start",
     description:
-      "Initialize the SDK, verify the extension, connect a circle, and invoke methods.",
+      "Initialize the SDK, connect to a circle, request capabilities, and invoke blockchain methods.",
     samples: [
       {
-        title: "Initialize and connect",
+        title: "Complete integration example",
         code: `import { OctraSDK } from '@octwa/sdk';
 
-const sdk = await OctraSDK.init();
+// 1. Initialize SDK
+const sdk = await OctraSDK.init({ timeout: 3000 });
 
+// 2. Check if wallet is installed
 if (!sdk.isInstalled()) {
-  console.log('Please install Octra Wallet extension');
+  console.log('Please install OctWa Wallet extension');
   return;
 }
 
-await sdk.connect({
+// 3. Connect to a circle
+const connection = await sdk.connect({
   circle: 'my_dapp_v1',
   appOrigin: window.location.origin,
 });
 
+console.log('Connected:', connection.walletPubKey);
+
+// 4. Request capability
 const capability = await sdk.requestCapability({
   circle: 'my_dapp_v1',
-  methods: ['get_balance', 'send_transaction'],
-  scope: 'write',
+  methods: ['get_balance'],
+  scope: 'read',
   encrypted: false,
   ttlSeconds: 3600,
 });
 
+// 5. Invoke method
 const result = await sdk.invoke({
   capabilityId: capability.id,
   method: 'get_balance',
 });
 
 if (result.success) {
-  const data = JSON.parse(new TextDecoder().decode(result.data));
-  console.log('Balance:', data.balance);
+  const decoder = new TextDecoder();
+  const data = JSON.parse(decoder.decode(result.data));
+  console.log('Balance:', data.octBalance, 'OCT');
 }`,
       },
     ],
@@ -206,144 +224,328 @@ if (result.success) {
   {
     title: "Core Concepts",
     description:
-      "Circles define isolated contexts, and capabilities authorize what a dApp can do.",
+      "Understanding circles, capabilities, and the capability-based authorization model.",
     bullets: [
-      <>Circle keeps permissions separated per app context.</>,
-      <>Capabilities are signed permissions scoped by methods and time.</>,
       <>
-        Invocations require a valid capability and a method name like{" "}
-        <code className="sdk-inline-code">send_transaction</code>.
+        <strong>Circle:</strong> An isolated context that keeps permissions separated per app. 
+        Each dApp should use a unique circle identifier.
+      </>,
+      <>
+        <strong>Capability:</strong> A signed permission token that authorizes specific methods 
+        with time-bound access. Scoped by <code className="sdk-inline-code">read</code>, <code className="sdk-inline-code">write</code>, or <code className="sdk-inline-code">compute</code>.
+      </>,
+      <>
+        <strong>Invocation:</strong> Executing a blockchain method using a valid capability. 
+        Methods include <code className="sdk-inline-code">get_balance</code>, <code className="sdk-inline-code">send_transaction</code>, and <code className="sdk-inline-code">invoke_compute</code>.
       </>,
     ],
     samples: [
       {
-        title: "Capability shape",
+        title: "Capability interface",
         code: `interface Capability {
-  id: string;
-  circle: string;
-  methods: string[];
+  id: string;              // Unique capability ID
+  circle: string;          // Circle identifier
+  methods: string[];       // Authorized methods
   scope: 'read' | 'write' | 'compute';
-  encrypted: boolean;
-  appOrigin: string;
-  issuedAt: number;
-  expiresAt: number;
-  signature: string;
+  encrypted: boolean;      // HFHE encryption flag
+  appOrigin: string;       // dApp origin
+  issuedAt: number;        // Unix timestamp
+  expiresAt: number;       // Unix timestamp
+  signature: string;       // Wallet signature
+  state: 'ACTIVE' | 'EXPIRED' | 'REVOKED';
 }`,
-      },
-      {
-        title: "Invoke with payload",
-        code: `const result = await sdk.invoke({
-  capabilityId: capability.id,
-  method: 'send_transaction',
-  payload: new TextEncoder().encode(
-    JSON.stringify({ to: 'oct...', amount: 100 })
-  ),
-});`,
       },
     ],
   },
   {
     title: "API Reference",
     description:
-      "Common SDK calls for lifecycle, capabilities, and invocations.",
+      "Complete SDK methods for connection management, capabilities, and invocations.",
     bullets: [
       <>
-        Initialize with <code className="sdk-inline-code">OctraSDK.init()</code>{" "}
-        and optional timeout.
+        <code className="sdk-inline-code">OctraSDK.init(options?)</code> - Initialize SDK with optional timeout
       </>,
       <>
-        Check availability via{" "}
-        <code className="sdk-inline-code">sdk.isInstalled()</code>.
+        <code className="sdk-inline-code">sdk.isInstalled()</code> - Check if wallet extension is installed
       </>,
       <>
-        Session state is available with{" "}
-        <code className="sdk-inline-code">sdk.getSessionState()</code>.
+        <code className="sdk-inline-code">sdk.connect(params)</code> - Establish connection to a circle
+      </>,
+      <>
+        <code className="sdk-inline-code">sdk.disconnect()</code> - Disconnect from current circle
+      </>,
+      <>
+        <code className="sdk-inline-code">sdk.requestCapability(params)</code> - Request permission for methods
+      </>,
+      <>
+        <code className="sdk-inline-code">sdk.invoke(params)</code> - Execute blockchain method
+      </>,
+      <>
+        <code className="sdk-inline-code">sdk.signMessage(message)</code> - Sign arbitrary message
+      </>,
+      <>
+        <code className="sdk-inline-code">sdk.listCapabilities()</code> - List all active capabilities
+      </>,
+      <>
+        <code className="sdk-inline-code">sdk.renewCapability(id)</code> - Extend capability expiration
+      </>,
+      <>
+        <code className="sdk-inline-code">sdk.revokeCapability(id)</code> - Revoke capability programmatically
       </>,
     ],
     samples: [
       {
-        title: "Initialize",
-        code: `const sdk = await OctraSDK.init({
-  timeout: 3000,
-});`,
-      },
-      {
-        title: "Connect and request capability",
-        code: `const connection = await sdk.connect({
+        title: "Connection management",
+        code: `// Connect
+const connection = await sdk.connect({
   circle: 'my_circle',
   appOrigin: window.location.origin,
 });
 
-const capability = await sdk.requestCapability({
+// Get session state
+const session = sdk.getSessionState();
+console.log('Connected:', session.isConnected);
+
+// Disconnect
+await sdk.disconnect();`,
+      },
+      {
+        title: "Capability lifecycle",
+        code: `// Request capability
+const cap = await sdk.requestCapability({
   circle: 'my_circle',
   methods: ['get_balance', 'send_transaction'],
   scope: 'write',
   encrypted: false,
   ttlSeconds: 7200,
+});
+
+// List all capabilities
+const allCaps = await sdk.listCapabilities();
+
+// Renew capability (extends by 15 minutes)
+const renewed = await sdk.renewCapability(cap.id);
+
+// Revoke capability
+await sdk.revokeCapability(cap.id);`,
+      },
+    ],
+  },
+  {
+    title: "Method Invocation",
+    description:
+      "Invoke blockchain methods with different capability scopes.",
+    bullets: [
+      <>
+        <strong>Read scope:</strong> Query blockchain state without modifications. 
+        Example: <code className="sdk-inline-code">get_balance</code>
+      </>,
+      <>
+        <strong>Write scope:</strong> Submit state-changing transactions. 
+        Example: <code className="sdk-inline-code">send_transaction</code>
+      </>,
+      <>
+        <strong>Compute scope:</strong> Execute HFHE encrypted computations. 
+        Example: <code className="sdk-inline-code">invoke_compute</code>
+      </>,
+    ],
+    samples: [
+      {
+        title: "Read: Get balance",
+        code: `const result = await sdk.invoke({
+  capabilityId: readCapability.id,
+  method: 'get_balance',
+});
+
+if (result.success) {
+  const data = JSON.parse(
+    new TextDecoder().decode(result.data)
+  );
+  console.log('Balance:', data.octBalance, 'OCT');
+}`,
+      },
+      {
+        title: "Write: Send transaction",
+        code: `const txPayload = {
+  to: 'oct8UYokvM1DR2QpEVM7oCLvJLPvJqvvvvvvvvvvvvvvvvvvv',
+  amount: 0.1,
+  message: 'Payment for services'
+};
+
+const result = await sdk.invoke({
+  capabilityId: writeCapability.id,
+  method: 'send_transaction',
+  payload: new TextEncoder().encode(
+    JSON.stringify(txPayload)
+  ),
+});`,
+      },
+      {
+        title: "Compute: HFHE computation",
+        code: `const computePayload = {
+  circuitId: 'neural_net_inference',
+  encryptedInput: {
+    scheme: 'HFHE',
+    data: new Uint8Array([...]), // Encrypted data
+    associatedData: 'metadata',
+  },
+  computeProfile: {
+    gateCount: 5000,
+    vectorSize: 512,
+    depth: 15,
+    expectedBootstrap: 3,
+  },
+  gasLimit: 1000000,
+};
+
+const result = await sdk.invoke({
+  capabilityId: computeCapability.id,
+  method: 'invoke_compute',
+  payload: new TextEncoder().encode(
+    JSON.stringify(computePayload)
+  ),
 });`,
       },
     ],
   },
   {
-    title: "Events",
-    description: "Subscribe to connection, capability, and readiness events.",
+    title: "Gas Estimation",
+    description:
+      "Estimate transaction costs before submission. Gas formula: OU × 0.0000001 = Fee in OCT",
+    bullets: [
+      <>
+        <code className="sdk-inline-code">estimatePlainTx(params)</code> - Estimate gas for plain transactions
+      </>,
+      <>
+        <code className="sdk-inline-code">estimateEncryptedTx(payload)</code> - Estimate gas for encrypted transactions
+      </>,
+      <>
+        <code className="sdk-inline-code">estimateComputeCost(profile)</code> - Estimate cost for HFHE computations
+      </>,
+    ],
     samples: [
       {
-        title: "Event hooks",
-        code: `sdk.on('connect', ({ connection }) => { ... });
-sdk.on('disconnect', () => { ... });
-sdk.on('capabilityGranted', ({ capability }) => { ... });
-sdk.on('capabilityRevoked', ({ capabilityId }) => { ... });
-sdk.on('extensionReady', () => { ... });`,
+        title: "Estimate plain transaction",
+        code: `const estimate = await sdk.estimatePlainTx({
+  to: 'oct...',
+  amount: 100
+});
+
+console.log('Gas Units:', estimate.gasUnits, 'OU');
+console.log('Cost:', estimate.tokenCost, 'OCT');
+// Small TX (< 1000 OCT): 10,000 OU = 0.001 OCT
+// Large TX (>= 1000 OCT): 30,000 OU = 0.003 OCT`,
+      },
+      {
+        title: "Estimate compute cost",
+        code: `const estimate = await sdk.estimateComputeCost({
+  gateCount: 5000,
+  vectorSize: 512,
+  depth: 15,
+  expectedBootstrap: 3,
+});
+
+console.log('Compute cost:', estimate.tokenCost, 'OCT');`,
       },
     ],
   },
   {
-    title: "Intents Client",
-    description:
-      "Use intents to orchestrate swaps with a dedicated helper client.",
+    title: "Events & Listeners",
+    description: "Subscribe to SDK events for real-time updates on connection and capability changes.",
     samples: [
       {
-        title: "Create and submit intent",
-        code: `import { OctraSDK, IntentsClient } from '@octwa/sdk';
+        title: "Event listeners",
+        code: `// Connection events
+sdk.on('connect', ({ connection }) => {
+  console.log('Connected:', connection.walletPubKey);
+});
 
-const sdk = await OctraSDK.init();
-const intents = new IntentsClient(sdk, 'http://localhost:3001');
+sdk.on('disconnect', () => {
+  console.log('Disconnected from wallet');
+});
 
-const quote = await intents.getQuote(100);
-const payload = await intents.createIntent(quote, '0x...targetAddress');
+// Capability events
+sdk.on('capabilityGranted', ({ capability }) => {
+  console.log('Capability granted:', capability.id);
+});
 
-await intents.signIntent(payload);
-const result = await intents.submitIntent(octraTxHash);`,
+sdk.on('capabilityRevoked', ({ capabilityId }) => {
+  console.log('Capability revoked:', capabilityId);
+});
+
+// Extension ready
+sdk.on('extensionReady', () => {
+  console.log('Wallet extension is ready');
+});
+
+// Remove listener
+sdk.off('connect', handler);`,
       },
+    ],
+  },
+  {
+    title: "Security Features",
+    description:
+      "Built-in security mechanisms to protect users and ensure transaction integrity.",
+    bullets: [
+      <>
+        <strong>Canonical Serialization:</strong> Deterministic transaction building with sorted keys 
+        prevents signature malleability attacks.
+      </>,
+      <>
+        <strong>Domain Separation:</strong> Prevents signature replay attacks across different contexts 
+        by including domain-specific prefixes.
+      </>,
+      <>
+        <strong>Signing Mutex:</strong> Automatic protection against race conditions and double-send 
+        vulnerabilities during concurrent signing operations.
+      </>,
+      <>
+        <strong>Nonce Management:</strong> SDK provides nonces for transaction ordering, wallet validates 
+        to prevent replay attacks.
+      </>,
+      <>
+        <strong>HFHE Encryption:</strong> Encrypted payloads are treated as opaque blobs, ensuring 
+        privacy for sensitive computations.
+      </>,
     ],
   },
   {
     title: "Error Handling",
-    description: "Handle common error classes for smoother user experience.",
+    description: "Handle SDK errors gracefully with typed error classes.",
     samples: [
       {
-        title: "Catch common errors",
+        title: "Error handling patterns",
         code: `import {
   NotInstalledError,
   UserRejectedError,
+  TimeoutError,
+  InvalidCapabilityError,
 } from '@octwa/sdk';
 
 try {
-  await sdk.connect({ ... });
+  await sdk.connect({ circle: 'my_app' });
 } catch (error) {
   if (error instanceof NotInstalledError) {
-    // Wallet not installed
+    // Wallet extension not installed
+    showInstallPrompt();
   } else if (error instanceof UserRejectedError) {
-    // User rejected the request
+    // User rejected the connection request
+    showRejectionMessage();
+  } else if (error instanceof TimeoutError) {
+    // Request timed out
+    showTimeoutMessage();
+  } else if (error instanceof InvalidCapabilityError) {
+    // Capability expired or invalid
+    requestNewCapability();
   }
 }`,
       },
     ],
   },
   {
-    title: "Types",
-    description: "Bring in SDK types when you need strong typing in your app.",
+    title: "TypeScript Support",
+    description: "Full TypeScript support with comprehensive type definitions for type-safe development.",
     samples: [
       {
         title: "Type imports",
@@ -354,7 +556,15 @@ try {
   InvocationRequest,
   InvocationResult,
   SessionState,
-} from '@octwa/sdk';`,
+  EncryptedPayload,
+  ComputeProfile,
+  GasEstimate,
+} from '@octwa/sdk';
+
+// Use types in your code
+const connection: Connection = await sdk.connect({...});
+const capability: Capability = await sdk.requestCapability({...});
+const result: InvocationResult = await sdk.invoke({...});`,
       },
     ],
   },
@@ -382,7 +592,21 @@ const Slide = ({ index, currentSlide, children }: SlideProps) => (
     className={`slide ${currentSlide === index ? "active" : ""}`}
     data-slide={index}
   >
-    {children}
+    <motion.div
+      key={`slide-content-${index}`}
+      initial={{ opacity: 0, y: 20 }}
+      animate={currentSlide === index ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      style={{ 
+        width: "100%", 
+        height: "100%", 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "center" 
+      }}
+    >
+      {children}
+    </motion.div>
   </section>
 );
 
@@ -396,7 +620,21 @@ const SdkSlide = ({ index, currentSlide, children }: SdkSlideProps) => (
     className={`sdk-slide ${currentSlide === index ? "active" : ""}`}
     data-slide={index}
   >
-    {children}
+    <motion.div
+      key={`sdk-slide-content-${index}`}
+      initial={{ opacity: 0, y: 20 }}
+      animate={currentSlide === index ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      style={{ 
+        width: "100%", 
+        height: "100%", 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "center" 
+      }}
+    >
+      {children}
+    </motion.div>
   </section>
 );
 
@@ -412,11 +650,17 @@ const FeatureCard = ({
   icon,
   className,
 }: FeatureCardProps) => (
-  <div className={`feature-card${className ? ` ${className}` : ""}`}>
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true }}
+    transition={{ duration: 0.4, ease: "easeOut" }}
+    className={`feature-card${className ? ` ${className}` : ""}`}
+  >
     {icon}
     <h3 className="feature-title">{title}</h3>
     <p className="feature-desc">{description}</p>
-  </div>
+  </motion.div>
 );
 
 type ModeCardProps = {
@@ -426,13 +670,19 @@ type ModeCardProps = {
   highlight?: boolean;
 };
 const ModeCard = ({ title, description, icon, highlight }: ModeCardProps) => (
-  <div className={`mode-card${highlight ? " private" : ""}`}>
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true }}
+    transition={{ duration: 0.4, ease: "easeOut" }}
+    className={`mode-card${highlight ? " private" : ""}`}
+  >
     <h3 className="mode-title">
       {icon}
       {title}
     </h3>
     <p className="mode-desc">{description}</p>
-  </div>
+  </motion.div>
 );
 
 type SecurityItemProps = {
@@ -441,13 +691,19 @@ type SecurityItemProps = {
   icon: ReactNode;
 };
 const SecurityItem = ({ title, description, icon }: SecurityItemProps) => (
-  <div className="security-item">
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true }}
+    transition={{ duration: 0.4, ease: "easeOut" }}
+    className="security-item"
+  >
     {icon}
     <div className="security-text">
       <strong>{title}</strong>
       <span>{description}</span>
     </div>
-  </div>
+  </motion.div>
 );
 
 type AppCardProps = {
@@ -879,7 +1135,7 @@ export default function App() {
           Icon: sdkSidebarIcons[i] || BookOpen,
         }));
       case "apps":
-        return apps.map((a) => ({ label: a.name, Icon: LayoutGrid }));
+        return apps.map((a) => ({ label: a.name, Icon: a.icon || LayoutGrid }));
       case "tools":
         return tools.map((t) => ({ label: t.name, Icon: Wrench }));
       default:
@@ -1356,11 +1612,7 @@ export default function App() {
             onClick={() => setSidebarOpen(!sidebarOpen)}
             aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
           >
-            {sidebarOpen ? (
-              <PanelLeftClose size={18} />
-            ) : (
-              <PanelLeftOpen size={18} />
-            )}
+            {sidebarOpen ? '‹' : '›'}
           </button>
           <nav className="sidebar-nav">
             {sidebarItems.map((item, index) => (
