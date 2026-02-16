@@ -135,7 +135,7 @@ type SdkSection = {
 
 const sdkSections: SdkSection[] = [
   {
-    title: "OctWa SDK v2.0.0",
+    title: "OctWa SDK v1.1.1",
     description:
       "A stateless, deterministic transaction builder for integrating dApps with OctWa Wallet Extension. The SDK provides type-safe APIs, canonical serialization, domain separation for security, and comprehensive error handling.",
     bullets: [
