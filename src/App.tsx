@@ -25,7 +25,6 @@ import {
   ChevronRight,
   X,
   Copy,
-  Cpu,
   Check,
   Home,
   Info,
@@ -57,15 +56,6 @@ const screenshots = [
 ];
 
 const apps = [
-  {
-    name: "OctWa Analyzer",
-    description:
-      "A lightweight web UI for browsing Octra transactions, addresses, and epochs.",
-    appUrl: "https://analyzer.octwa.pw/",
-    repoUrl: "https://github.com/m-tq/OctWa-Analyzer",
-    screenshotUrl: "analyzer.png",
-    icon: Cpu,
-  },
   {
     name: "OctWa dApp Starter",
     description:
