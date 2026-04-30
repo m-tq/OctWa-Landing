@@ -75,6 +75,23 @@ const apps = [
       </svg>
     ),
   },
+  {
+    name: "OctWa Bridge",
+    description:
+      "Cross-chain bridge for OCT and wOCT. Lock OCT on Octra to mint wOCT on Ethereum, or burn wOCT to unlock OCT.",
+    appUrl: "https://bridge.octwa.pw/",
+    repoUrl: "https://github.com/m-tq/OctWa-Bridge",
+    screenshotUrl: "bridge.png",
+    icon: () => (
+      <svg width="18" height="18" viewBox="0 0 64 64" fill="none">
+        <rect x="4" y="28" width="56" height="8" rx="4" fill="currentColor" opacity="0.3"/>
+        <rect x="8" y="20" width="8" height="24" rx="2" fill="currentColor"/>
+        <rect x="48" y="20" width="8" height="24" rx="2" fill="currentColor"/>
+        <path d="M20 32 L44 32" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
+        <path d="M38 26 L44 32 L38 38" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+      </svg>
+    ),
+  },
 ];
 
 const tools = [
