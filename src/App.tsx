@@ -899,10 +899,10 @@ const useOctraBackground = (containerRef: RefObject<HTMLDivElement>) => {
         float glow = 1.0 - smoothstep(0.0, 0.5, dist);
         float alpha = core * 0.8 + glow * 0.4;
         float colorShift = sin(uTime * 0.2 + vClusterId * 1.5) * 0.5 + 0.5;
-        vec3 color1 = vec3(0.227, 0.302, 1.0);
-        vec3 color2 = vec3(0.35, 0.45, 1.0);
-        vec3 color3 = vec3(0.55, 0.62, 1.0);
-        vec3 color4 = vec3(0.3, 0.22, 1.0);
+        vec3 color1 = vec3(0.231, 0.337, 0.498);
+        vec3 color2 = vec3(0.318, 0.431, 0.604);
+        vec3 color3 = vec3(0.549, 0.616, 0.714);
+        vec3 color4 = vec3(0.165, 0.247, 0.373);
         vec3 baseColor = mix(color1, color2, vSeed);
         baseColor = mix(baseColor, color3, vDepth * 0.3);
         baseColor = mix(baseColor, color4, colorShift * 0.2);
@@ -929,7 +929,7 @@ const useOctraBackground = (containerRef: RefObject<HTMLDivElement>) => {
     const lineFragmentShader = `
       varying float vOpacity;
       void main() {
-        vec3 color = vec3(0.227, 0.302, 1.0);
+        vec3 color = vec3(0.231, 0.337, 0.498);
         float alpha = vOpacity * 0.25;
         gl_FragColor = vec4(color, alpha);
       }
