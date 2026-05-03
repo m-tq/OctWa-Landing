@@ -164,16 +164,6 @@ const sdkSections: SdkSection[] = [
       <>Signing mutex serializes concurrent <code className="sdk-inline-code">invoke()</code> calls — prevents nonce races.</>,
       <>Networks: <code className="sdk-inline-code">mainnet</code> and <code className="sdk-inline-code">devnet</code>. EVM network auto-resolved from wallet settings.</>,
     ],
-    actions: (
-      <div className="cta-group">
-        <a className="btn btn-primary" href="https://www.npmjs.com/package/@octwa/sdk" target="_blank" rel="noopener">
-          <ExternalLink size={16} /> npm: @octwa/sdk
-        </a>
-        <a className="btn btn-secondary" href="https://github.com/m-tq/OctWa/tree/master/main/sdk" target="_blank" rel="noopener">
-          <Github size={16} /> View on GitHub
-        </a>
-      </div>
-    ),
   },
   {
     id: "installation",
@@ -1507,12 +1497,16 @@ export default function App() {
       if (!scrollEl || sectionEls.length === 0) return;
 
       const containerRect = scrollEl.getBoundingClientRect();
-      // Trigger point: 35% from the top of the scroll container
       const triggerY = containerRect.top + containerRect.height * 0.35;
+
+      console.log('[ScrollSpy] scroll fired — scrollTop:', scrollEl.scrollTop,
+        'containerRect.top:', containerRect.top.toFixed(0),
+        'triggerY:', triggerY.toFixed(0));
 
       let activeIdx = 0;
       for (let i = 0; i < sectionEls.length; i++) {
         const rect = sectionEls[i].getBoundingClientRect();
+        console.log(`  section[${i}] id=${sectionEls[i].id} rect.top=${rect.top.toFixed(0)}`);
         if (rect.top <= triggerY) {
           activeIdx = i;
         } else {
@@ -1520,6 +1514,7 @@ export default function App() {
         }
       }
 
+      console.log('[ScrollSpy] → activeIdx:', activeIdx);
       setCurrentSdkSlide(activeIdx);
       currentSdkSlideRef.current = activeIdx;
     };
@@ -1531,25 +1526,30 @@ export default function App() {
 
     const setup = () => {
       scrollEl = document.getElementById("sdk-docs-scroll");
-      if (!scrollEl) return;
+      console.log('[ScrollSpy] setup — scrollEl:', scrollEl);
+      if (!scrollEl) { console.warn('[ScrollSpy] #sdk-docs-scroll NOT FOUND'); return; }
 
       sectionEls = visibleSdkSections
         .map((s) => document.getElementById(`sdk-section-${s.id}`))
         .filter(Boolean) as HTMLElement[];
 
-      if (sectionEls.length === 0) return;
+      console.log('[ScrollSpy] sectionEls found:', sectionEls.length,
+        sectionEls.map(e => e.id));
+
+      if (sectionEls.length === 0) { console.warn('[ScrollSpy] no sections found'); return; }
 
       updateActive();
       scrollEl.addEventListener("scroll", onScroll, { passive: true });
+      console.log('[ScrollSpy] scroll listener attached to', scrollEl.id);
     };
 
-    // Defer 150ms to ensure framer-motion page transition has painted
     const timer = window.setTimeout(setup, 150);
 
     return () => {
       window.clearTimeout(timer);
       if (rafId !== null) cancelAnimationFrame(rafId);
       scrollEl?.removeEventListener("scroll", onScroll);
+      console.log('[ScrollSpy] cleanup');
     };
   }, [currentPage, visibleSdkSections]);
 
