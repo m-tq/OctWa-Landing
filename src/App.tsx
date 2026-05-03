@@ -1276,7 +1276,6 @@ export default function App() {
   const touchStartRef = useRef(0);
   const touchEndRef = useRef(0);
   const copyTimeoutRef = useRef<number | null>(null);
-  const cleanupRef = useRef<(() => void) | undefined>(undefined);
 
   /* ── Sidebar items (context-aware) ── */
   const sidebarItems = useMemo(() => {
@@ -1500,57 +1499,57 @@ export default function App() {
   useEffect(() => {
     if (currentPage !== "sdk") return;
 
-    // Defer until after React has painted the SDK docs page
-    const setup = () => {
-      const scrollEl = document.getElementById("sdk-docs-scroll");
-      if (!scrollEl) return;
+    let scrollEl: HTMLElement | null = null;
+    let sectionEls: HTMLElement[] = [];
+    let rafId: number | null = null;
 
-      const getSectionEls = () =>
-        visibleSdkSections
-          .map((s) => document.getElementById(`sdk-section-${s.id}`))
-          .filter(Boolean) as HTMLElement[];
+    const updateActive = () => {
+      if (!scrollEl || sectionEls.length === 0) return;
 
-      const updateActive = () => {
-        const els = getSectionEls();
-        if (els.length === 0) return;
+      const containerRect = scrollEl.getBoundingClientRect();
+      // Trigger point: 35% from the top of the scroll container
+      const triggerY = containerRect.top + containerRect.height * 0.35;
 
-        const scrollTop = scrollEl.scrollTop;
-        const containerHeight = scrollEl.clientHeight;
-        // Threshold: section is "active" when its top is within the top 40% of the container
-        const threshold = containerHeight * 0.4;
-
-        let activeIdx = 0;
-        for (let i = 0; i < els.length; i++) {
-          const offsetTop = els[i].offsetTop - scrollEl.offsetTop;
-          if (offsetTop - scrollTop <= threshold) {
-            activeIdx = i;
-          } else {
-            break;
-          }
+      let activeIdx = 0;
+      for (let i = 0; i < sectionEls.length; i++) {
+        const rect = sectionEls[i].getBoundingClientRect();
+        if (rect.top <= triggerY) {
+          activeIdx = i;
+        } else {
+          break;
         }
+      }
 
-        setCurrentSdkSlide(activeIdx);
-        currentSdkSlideRef.current = activeIdx;
-      };
-
-      // Run once immediately to set initial state
-      updateActive();
-
-      scrollEl.addEventListener("scroll", updateActive, { passive: true });
-      return () => scrollEl.removeEventListener("scroll", updateActive);
+      setCurrentSdkSlide(activeIdx);
+      currentSdkSlideRef.current = activeIdx;
     };
 
-    // Small delay to ensure DOM is painted after page transition
-    const timer = window.setTimeout(() => {
-      const cleanup = setup();
-      // Store cleanup for the effect's return
-      if (cleanup) cleanupRef.current = cleanup;
-    }, 100);
+    const onScroll = () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(updateActive);
+    };
+
+    const setup = () => {
+      scrollEl = document.getElementById("sdk-docs-scroll");
+      if (!scrollEl) return;
+
+      sectionEls = visibleSdkSections
+        .map((s) => document.getElementById(`sdk-section-${s.id}`))
+        .filter(Boolean) as HTMLElement[];
+
+      if (sectionEls.length === 0) return;
+
+      updateActive();
+      scrollEl.addEventListener("scroll", onScroll, { passive: true });
+    };
+
+    // Defer 150ms to ensure framer-motion page transition has painted
+    const timer = window.setTimeout(setup, 150);
 
     return () => {
       window.clearTimeout(timer);
-      cleanupRef.current?.();
-      cleanupRef.current = undefined;
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      scrollEl?.removeEventListener("scroll", onScroll);
     };
   }, [currentPage, visibleSdkSections]);
 
