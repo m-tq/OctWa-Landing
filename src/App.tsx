@@ -1495,6 +1495,53 @@ export default function App() {
     };
   }, []);
 
+  // Scroll spy — update active sidebar item as SDK docs sections scroll into view
+  useEffect(() => {
+    if (currentPage !== "sdk") return;
+
+    const scrollEl = document.getElementById("sdk-docs-scroll");
+    if (!scrollEl) return;
+
+    const sectionEls = visibleSdkSections
+      .map((s) => document.getElementById(`sdk-section-${s.id}`))
+      .filter(Boolean) as HTMLElement[];
+
+    if (sectionEls.length === 0) return;
+
+    // Track which sections are intersecting and pick the topmost one
+    const intersecting = new Set<string>();
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            intersecting.add(entry.target.id);
+          } else {
+            intersecting.delete(entry.target.id);
+          }
+        });
+
+        // Find the topmost intersecting section
+        for (let i = 0; i < sectionEls.length; i++) {
+          if (intersecting.has(sectionEls[i].id)) {
+            setCurrentSdkSlide(i);
+            currentSdkSlideRef.current = i;
+            return;
+          }
+        }
+      },
+      {
+        root: scrollEl,
+        // Trigger when section top enters the top 30% of the scroll container
+        rootMargin: "0px 0px -70% 0px",
+        threshold: 0,
+      },
+    );
+
+    sectionEls.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [currentPage, visibleSdkSections]);
+
   useEffect(() => {
     const isModalOpen = activeAppIndex !== null || activeSdkSection !== null;
     document.body.classList.toggle("modal-open", isModalOpen);
