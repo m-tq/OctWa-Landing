@@ -1494,8 +1494,6 @@ export default function App() {
         .map((s) => document.getElementById(`sdk-section-${s.id}`))
         .filter(Boolean) as HTMLElement[];
 
-      console.log('[ScrollSpy] ref attached — sections:', sectionEls.length);
-
       let rafId: number | null = null;
 
       const updateActive = () => {
@@ -1523,7 +1521,6 @@ export default function App() {
 
       updateActive();
       el.addEventListener("scroll", onScroll, { passive: true });
-      // No cleanup needed — element unmounts when page changes
     },
     [visibleSdkSections],
   );
