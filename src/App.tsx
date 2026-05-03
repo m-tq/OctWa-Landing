@@ -1485,73 +1485,48 @@ export default function App() {
     };
   }, []);
 
-  // Scroll spy — update active sidebar item as SDK docs sections scroll into view
-  useEffect(() => {
-    if (currentPage !== "sdk") return;
+  // Scroll spy — ref callback attaches listener the moment the element mounts
+  const sdkScrollRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      if (!el) return;
 
-    let scrollEl: HTMLElement | null = null;
-    let sectionEls: HTMLElement[] = [];
-    let rafId: number | null = null;
-
-    const updateActive = () => {
-      if (!scrollEl || sectionEls.length === 0) return;
-
-      const containerRect = scrollEl.getBoundingClientRect();
-      const triggerY = containerRect.top + containerRect.height * 0.35;
-
-      console.log('[ScrollSpy] scroll fired — scrollTop:', scrollEl.scrollTop,
-        'containerRect.top:', containerRect.top.toFixed(0),
-        'triggerY:', triggerY.toFixed(0));
-
-      let activeIdx = 0;
-      for (let i = 0; i < sectionEls.length; i++) {
-        const rect = sectionEls[i].getBoundingClientRect();
-        console.log(`  section[${i}] id=${sectionEls[i].id} rect.top=${rect.top.toFixed(0)}`);
-        if (rect.top <= triggerY) {
-          activeIdx = i;
-        } else {
-          break;
-        }
-      }
-
-      console.log('[ScrollSpy] → activeIdx:', activeIdx);
-      setCurrentSdkSlide(activeIdx);
-      currentSdkSlideRef.current = activeIdx;
-    };
-
-    const onScroll = () => {
-      if (rafId !== null) cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(updateActive);
-    };
-
-    const setup = () => {
-      scrollEl = document.getElementById("sdk-docs-scroll");
-      console.log('[ScrollSpy] setup — scrollEl:', scrollEl);
-      if (!scrollEl) { console.warn('[ScrollSpy] #sdk-docs-scroll NOT FOUND'); return; }
-
-      sectionEls = visibleSdkSections
+      const sectionEls = visibleSdkSections
         .map((s) => document.getElementById(`sdk-section-${s.id}`))
         .filter(Boolean) as HTMLElement[];
 
-      console.log('[ScrollSpy] sectionEls found:', sectionEls.length,
-        sectionEls.map(e => e.id));
+      console.log('[ScrollSpy] ref attached — sections:', sectionEls.length);
 
-      if (sectionEls.length === 0) { console.warn('[ScrollSpy] no sections found'); return; }
+      let rafId: number | null = null;
+
+      const updateActive = () => {
+        const containerRect = el.getBoundingClientRect();
+        const triggerY = containerRect.top + containerRect.height * 0.35;
+
+        let activeIdx = 0;
+        for (let i = 0; i < sectionEls.length; i++) {
+          const rect = sectionEls[i].getBoundingClientRect();
+          if (rect.top <= triggerY) {
+            activeIdx = i;
+          } else {
+            break;
+          }
+        }
+
+        setCurrentSdkSlide(activeIdx);
+        currentSdkSlideRef.current = activeIdx;
+      };
+
+      const onScroll = () => {
+        if (rafId !== null) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(updateActive);
+      };
 
       updateActive();
-      scrollEl.addEventListener("scroll", onScroll, { passive: true });
-      console.log('[ScrollSpy] scroll listener attached to', scrollEl.id);
-    };
-
-    const timer = window.setTimeout(setup, 150);
-
-    return () => {
-      window.clearTimeout(timer);
-      if (rafId !== null) cancelAnimationFrame(rafId);
-      scrollEl?.removeEventListener("scroll", onScroll);
-      console.log('[ScrollSpy] cleanup');
-    };
-  }, [currentPage, visibleSdkSections]);
+      el.addEventListener("scroll", onScroll, { passive: true });
+      // No cleanup needed — element unmounts when page changes
+    },
+    [visibleSdkSections],
+  );
 
   useEffect(() => {
     const isModalOpen = activeAppIndex !== null || activeSdkSection !== null;
@@ -2169,7 +2144,7 @@ export default function App() {
                 animate="animate"
                 exit="exit"
               >
-                <div className="sdk-docs-scroll" id="sdk-docs-scroll">
+                <div className="sdk-docs-scroll" id="sdk-docs-scroll" ref={sdkScrollRef}>
                   {/* Header */}
                   <div className="sdk-docs-header">
                     <div className="sdk-docs-badge">@octwa/sdk</div>
