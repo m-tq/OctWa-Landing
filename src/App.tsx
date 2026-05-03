@@ -153,7 +153,7 @@ type SdkSection = {
 const sdkSections: SdkSection[] = [
   {
     id: "overview",
-    title: "@octwa/sdk v1.3.3",
+    title: "@octwa/sdk v1.3.4",
     description:
       "Official TypeScript SDK for integrating dApps with the OctWa Wallet Extension. Capability-based authorization, real SHA-256 via Web Crypto API, canonical serialization, domain separation, signing mutex, and full HFHE support. Private keys never leave the extension.",
     bullets: [
@@ -172,7 +172,7 @@ const sdkSections: SdkSection[] = [
     samples: [
       {
         title: "Install",
-        code: `npm install @octwa/sdk@1.3.3`,
+        code: `npm install @octwa/sdk@1.3.4`,
       },
       {
         title: "Import",
@@ -2147,7 +2147,7 @@ export default function App() {
                     <div className="sdk-docs-badge">@octwa/sdk</div>
                     <h1 className="sdk-docs-title">SDK Documentation</h1>
                     <p className="sdk-docs-subtitle">
-                      v1.3.3 · TypeScript · CJS + ESM · MIT License
+                      v1.3.4 · TypeScript · CJS + ESM · MIT License
                     </p>
                     <div className="cta-group" style={{ justifyContent: "flex-start", marginTop: "1rem" }}>
                       <a className="btn btn-primary" href="https://www.npmjs.com/package/@octwa/sdk" target="_blank" rel="noopener">
@@ -2197,7 +2197,7 @@ export default function App() {
                   ))}
 
                   <div className="sdk-docs-footer">
-                    <span>@octwa/sdk v1.3.3 · MIT License</span>
+                    <span>@octwa/sdk v1.3.4 · MIT License</span>
                     <a href="https://github.com/m-tq/OctWa" target="_blank" rel="noopener">
                       <Github size={13} /> github.com/m-tq/OctWa
                     </a>
