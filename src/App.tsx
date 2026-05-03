@@ -1276,6 +1276,7 @@ export default function App() {
   const touchStartRef = useRef(0);
   const touchEndRef = useRef(0);
   const copyTimeoutRef = useRef<number | null>(null);
+  const cleanupRef = useRef<(() => void) | undefined>(undefined);
 
   /* ── Sidebar items (context-aware) ── */
   const sidebarItems = useMemo(() => {
@@ -1499,47 +1500,58 @@ export default function App() {
   useEffect(() => {
     if (currentPage !== "sdk") return;
 
-    const scrollEl = document.getElementById("sdk-docs-scroll");
-    if (!scrollEl) return;
+    // Defer until after React has painted the SDK docs page
+    const setup = () => {
+      const scrollEl = document.getElementById("sdk-docs-scroll");
+      if (!scrollEl) return;
 
-    const sectionEls = visibleSdkSections
-      .map((s) => document.getElementById(`sdk-section-${s.id}`))
-      .filter(Boolean) as HTMLElement[];
+      const getSectionEls = () =>
+        visibleSdkSections
+          .map((s) => document.getElementById(`sdk-section-${s.id}`))
+          .filter(Boolean) as HTMLElement[];
 
-    if (sectionEls.length === 0) return;
+      const updateActive = () => {
+        const els = getSectionEls();
+        if (els.length === 0) return;
 
-    // Track which sections are intersecting and pick the topmost one
-    const intersecting = new Set<string>();
+        const scrollTop = scrollEl.scrollTop;
+        const containerHeight = scrollEl.clientHeight;
+        // Threshold: section is "active" when its top is within the top 40% of the container
+        const threshold = containerHeight * 0.4;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            intersecting.add(entry.target.id);
+        let activeIdx = 0;
+        for (let i = 0; i < els.length; i++) {
+          const offsetTop = els[i].offsetTop - scrollEl.offsetTop;
+          if (offsetTop - scrollTop <= threshold) {
+            activeIdx = i;
           } else {
-            intersecting.delete(entry.target.id);
-          }
-        });
-
-        // Find the topmost intersecting section
-        for (let i = 0; i < sectionEls.length; i++) {
-          if (intersecting.has(sectionEls[i].id)) {
-            setCurrentSdkSlide(i);
-            currentSdkSlideRef.current = i;
-            return;
+            break;
           }
         }
-      },
-      {
-        root: scrollEl,
-        // Trigger when section top enters the top 30% of the scroll container
-        rootMargin: "0px 0px -70% 0px",
-        threshold: 0,
-      },
-    );
 
-    sectionEls.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
+        setCurrentSdkSlide(activeIdx);
+        currentSdkSlideRef.current = activeIdx;
+      };
+
+      // Run once immediately to set initial state
+      updateActive();
+
+      scrollEl.addEventListener("scroll", updateActive, { passive: true });
+      return () => scrollEl.removeEventListener("scroll", updateActive);
+    };
+
+    // Small delay to ensure DOM is painted after page transition
+    const timer = window.setTimeout(() => {
+      const cleanup = setup();
+      // Store cleanup for the effect's return
+      if (cleanup) cleanupRef.current = cleanup;
+    }, 100);
+
+    return () => {
+      window.clearTimeout(timer);
+      cleanupRef.current?.();
+      cleanupRef.current = undefined;
+    };
   }, [currentPage, visibleSdkSections]);
 
   useEffect(() => {
