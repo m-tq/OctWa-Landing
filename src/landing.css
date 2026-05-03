@@ -1359,8 +1359,9 @@ h3 {
     padding: 0.1rem 0.35rem;
     font-size: 0.8rem;
     color: hsl(var(--foreground));
-    word-break: break-all;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    display: inline;
 }
 
 .sdk-code-block {
@@ -2323,15 +2324,14 @@ h3 {
 }
 
 .sdk-docs-list li {
-    display: flex;
-    gap: 0.6rem;
-    align-items: flex-start;
+    display: block;
+    padding-left: 1.1rem;
+    position: relative;
     font-size: 0.83rem;
     color: hsl(var(--muted-foreground));
-    line-height: 1.55;
+    line-height: 1.65;
     overflow-wrap: break-word;
     word-break: break-word;
-    min-width: 0;
 }
 
 .sdk-docs-list li::before {
@@ -2339,7 +2339,9 @@ h3 {
     color: hsl(var(--primary));
     font-size: 1rem;
     line-height: 1.3;
-    flex-shrink: 0;
+    position: absolute;
+    left: 0;
+    top: 0.05em;
 }
 
 .sdk-docs-list li strong {
@@ -2434,7 +2436,7 @@ h3 {
     /* Inline code in descriptions */
     .sdk-inline-code {
         font-size: 0.72rem;
-        word-break: break-all;
+        word-break: break-word;
     }
 
     /* Header actions stack vertically */
