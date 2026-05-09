@@ -104,7 +104,7 @@ const tools = [
   },
 ];
 
-const sdkDocsUrl = "https://github.com/m-tq/OctWa/tree/master/packages/sdk";
+const sdkDocsUrl = "https://www.npmjs.com/package/@octwa/sdk";
 
 const navLabels = [
   "Home",
@@ -130,8 +130,12 @@ const sdkSidebarIcons = [
   Globe,       // EVM Operations
   Lock,        // Private Balance
   ArrowDown,   // Stealth Transfers
+  Key,         // Crypto Identity
+  Lock,        // HFHE Ciphers
   Zap,         // Contract Calls
   Coins,       // EVM Token Balances
+  Eye,         // Chain Reads
+  ShieldCheck, // ZK Signing
   Zap,         // Gas Estimation
   Globe,       // Events
   Key,         // Crypto Utilities
@@ -153,15 +157,17 @@ type SdkSection = {
 const sdkSections: SdkSection[] = [
   {
     id: "overview",
-    title: "@octwa/sdk v1.3.4",
+    title: "@octwa/sdk v1.6.0",
     description:
-      "Official TypeScript SDK for integrating dApps with the OctWa Wallet Extension. Capability-based authorization, real SHA-256 via Web Crypto API, canonical serialization, domain separation, signing mutex, and full HFHE support. Private keys never leave the extension.",
+      "Official TypeScript SDK for integrating dApps with the OctWa Wallet Extension. Capability-based authorization, real SHA-256 via Web Crypto API, canonical serialization, domain separation, signing mutex, and full HFHE / PVAC support including client-side crypto identity, stealth scanning, and ZK-ready signing. Private keys never leave the extension.",
     bullets: [
       <>SDK is stateless — never holds private keys. All signing happens inside the wallet extension.</>,
       <>All data flows: dApp → SDK → window.octra → content.js → background.js → Octra Node RPC.</>,
       <>Capability-based authorization: scoped, time-bound, origin-bound permission tokens (Ed25519 signed).</>,
       <>Real SHA-256 via <code className="sdk-inline-code">crypto.subtle</code> — no custom hash for security ops.</>,
       <>Signing mutex serializes concurrent <code className="sdk-inline-code">invoke()</code> calls — prevents nonce races.</>,
+      <>HFHE / PVAC primitives exposed: <code className="sdk-inline-code">decryptCipher</code>, <code className="sdk-inline-code">encryptValue</code>, <code className="sdk-inline-code">computeSharedSecret</code>, <code className="sdk-inline-code">scanOutputs</code>, <code className="sdk-inline-code">signForZK</code>.</>,
+      <>Chain reads without a popup: <code className="sdk-inline-code">getTransaction</code>, <code className="sdk-inline-code">waitForConfirmation</code>, <code className="sdk-inline-code">getEpoch</code>, <code className="sdk-inline-code">getContractStorage</code>, <code className="sdk-inline-code">callContractView</code>.</>,
       <>Networks: <code className="sdk-inline-code">mainnet</code> and <code className="sdk-inline-code">devnet</code>. EVM network auto-resolved from wallet settings.</>,
     ],
   },
@@ -172,7 +178,7 @@ const sdkSections: SdkSection[] = [
     samples: [
       {
         title: "Install",
-        code: `npm install @octwa/sdk@1.3.4`,
+        code: `npm install @octwa/sdk@1.6.0`,
       },
       {
         title: "Import",
@@ -417,6 +423,87 @@ const claimed = await sdk.stealthClaim(capabilityId, outputs[0].id);
     ],
   },
   {
+    id: "crypto-identity",
+    title: "Crypto Identity",
+    description:
+      "Derived public keys exposed by the wallet. Nothing here is a signing secret — the Curve25519 view pubkey is safe to share for stealth receive and ECDH.",
+    bullets: [
+      <><code className="sdk-inline-code">getCryptoIdentity()</code> returns <code className="sdk-inline-code">ed25519PublicKey</code>, <code className="sdk-inline-code">viewPublicKey</code>, <code className="sdk-inline-code">pvacRegistered</code>, and the current encrypted-balance cipher.</>,
+      <><code className="sdk-inline-code">computeSharedSecret()</code> performs ECDH inside the wallet, returning the 32-byte shared secret plus the 16-byte stealth tag and the claim secret seed.</>,
+      <><code className="sdk-inline-code">getViewPubkey(address)</code> resolves a counterparty's view pubkey from chain — use it before building stealth sends.</>,
+    ],
+    samples: [
+      {
+        title: "Crypto identity & ECDH",
+        code: `// Auto-execute — no popup
+const identity = await sdk.getCryptoIdentity(capabilityId);
+// identity.ed25519PublicKey  — hex
+// identity.viewPublicKey     — base64 (safe to share)
+// identity.pvacRegistered    — bool
+// identity.currentCipher     — "hfhe_v1|..." or "0"
+
+// ECDH with a counterparty's view pubkey
+const ecdh = await sdk.computeSharedSecret(capabilityId, theirViewPubkey);
+// ecdh.sharedSecret  — base64, 32 bytes
+// ecdh.stealthTag    — hex, 16 bytes — output matching
+// ecdh.claimSecret   — base64, 32 bytes — for claim flow
+
+// Resolve someone else's view pubkey (required for stealthSend)
+const theirView = await sdk.getViewPubkey(capabilityId, 'oct...');`,
+      },
+    ],
+  },
+  {
+    id: "hfhe-ciphers",
+    title: "HFHE Ciphers",
+    description:
+      "Client-side HFHE primitives. Decrypt ciphers returned from contract storage or encrypt values before submitting them to a contract — all inside the wallet.",
+    bullets: [
+      <><code className="sdk-inline-code">decryptCipher(cipher)</code> takes an <code className="sdk-inline-code">hfhe_v1|...</code> string and returns the plaintext as a <code className="sdk-inline-code">bigint</code> (raw units) plus an OCT helper number.</>,
+      <><code className="sdk-inline-code">encryptValue(valueRaw)</code> produces an <code className="sdk-inline-code">hfhe_v1|...</code> cipher ready to pass as a contract argument.</>,
+      <><code className="sdk-inline-code">getDecryptedBalance()</code> combines <code className="sdk-inline-code">getBalance</code> and <code className="sdk-inline-code">decryptCipher</code> in one call.</>,
+      <><code className="sdk-inline-code">scanOutputs(outputs, onProgress?)</code> runs the ECDH match on a batch of raw stealth outputs and returns only the ones belonging to this wallet.</>,
+      <><code className="sdk-inline-code">keySwitch()</code> rotates the wallet's PVAC public key on chain.</>,
+    ],
+    samples: [
+      {
+        title: "Read an encrypted value from a contract",
+        code: `// Contract stores a private score per user
+const cipher = await sdk.getContractStorage(capabilityId, CONTRACT, 'score:' + userAddress);
+
+// Decrypt locally — no popup
+const { valueRaw, valueOct } = await sdk.decryptCipher(capabilityId, cipher as string);
+console.log('raw:', valueRaw, 'OCT:', valueOct);`,
+      },
+      {
+        title: "Encrypt a bid before sending it to a contract",
+        code: `const bidRaw = 1_000_000n; // 1 OCT in raw units
+const { cipher } = await sdk.encryptValue(capabilityId, bidRaw);
+
+await sdk.sendContractCall(capabilityId, {
+  contract: AUCTION,
+  method:   'submit_bid',
+  params:   [cipher],
+});`,
+      },
+      {
+        title: "Stealth scan in bulk",
+        code: `const raw = await sdk.callContractView(capabilityId, {
+  contract: STEALTH_INDEX,
+  method:   'outputs_since',
+  params:   [0],
+});
+
+const { outputs, matched } = await sdk.scanOutputs(
+  capabilityId,
+  raw as any[],
+  (p) => console.log(p.label, p.percent + '%'),
+);
+console.log('claimable:', matched);`,
+      },
+    ],
+  },
+  {
     id: "contract-calls",
     title: "Contract Calls",
     description: "Send typed Octra contract call transactions via the SDK convenience method.",
@@ -461,6 +548,60 @@ const wOCT = await sdk.getEvmTokenBalance(
   { decimals: 6, symbol: 'wOCT', name: 'Wrapped OCT' },
 );
 // wOCT.balance, wOCT.symbol, wOCT.decimals, wOCT.chainId`,
+      },
+    ],
+  },
+  {
+    id: "chain-reads",
+    title: "Chain Reads",
+    description:
+      "Read-only helpers that go through the wallet but never open a popup. Useful for polling confirmations, reading contract storage, or resolving another user's view pubkey.",
+    bullets: [
+      <><code className="sdk-inline-code">getTransaction(hash)</code> fetches the current tx snapshot. Returns <code className="sdk-inline-code">null</code> if the tx isn't in the node yet.</>,
+      <><code className="sdk-inline-code">waitForConfirmation(hash, opts)</code> polls until the tx is committed or rejected. <strong>Reverted contract calls still report tx status <code className="sdk-inline-code">confirmed</code></strong> — always pair with a <code className="sdk-inline-code">contract_receipt</code> check on the wallet side for write calls.</>,
+      <><code className="sdk-inline-code">getEpoch()</code> / <code className="sdk-inline-code">getRecommendedFee(opType)</code> for live epoch + per-op-type fee suggestions.</>,
+      <><code className="sdk-inline-code">getContractStorage(addr, key)</code> and <code className="sdk-inline-code">callContractView(payload)</code> for read-only storage access.</>,
+    ],
+    samples: [
+      {
+        title: "Confirm a transaction",
+        code: `const info = await sdk.waitForConfirmation(capabilityId, txHash, {
+  timeoutMs:   120_000,
+  onTick:      (snapshot) => console.log(snapshot?.status),
+});
+// info.status, info.epoch, info.ou, ...`,
+      },
+      {
+        title: "Read contract storage & call a view",
+        code: `const owner = await sdk.getContractStorage(capabilityId, ONS_CONTRACT, 'public_owner:alice');
+
+const status = await sdk.callContractView(capabilityId, {
+  contract: ONS_CONTRACT,
+  method:   'status_of',
+  params:   ['alice'],
+});
+// 0 free, 1 public active, 2 private active, 3 public grace, 4 private grace`,
+      },
+    ],
+  },
+  {
+    id: "zk-signing",
+    title: "ZK Signing",
+    description:
+      "Wallet-signed commitments for Groth16 / zkSNARK public inputs. The SDK never sees private witness data — the wallet hashes the payload under a user-supplied domain string and returns the Ed25519 signature plus the data hash.",
+    samples: [
+      {
+        title: "signForZK() — popup, write scope",
+        code: `const data = new TextEncoder().encode('my-commitment-payload');
+
+const result = await sdk.signForZK(capabilityId, {
+  data,
+  domain: 'my_dapp_v1',  // optional, prevents cross-dApp replay
+});
+
+// result.signature   — Ed25519 hex signature
+// result.publicKey   — Ed25519 hex pubkey
+// result.dataHash    — SHA-256 of data, ready for the circuit's public inputs`,
       },
     ],
   },
@@ -676,18 +817,29 @@ try {
   SessionState,
   // Balance
   BalanceResponse,
-  // Sign Message (Phase 1)
+  // Sign Message
   SignMessageResult,
-  // EVM Operations (Phase 3)
+  // EVM
   EvmTransactionPayload, EvmTransactionResult, Erc20TransactionPayload,
-  // Encrypted Balance (Phase 4)
+  // Encrypted Balance
   EncryptedBalanceInfo, EncryptBalanceResult, DecryptBalanceResult,
-  // Stealth Transfers (Phase 5)
+  // Stealth Transfers
   ClaimableOutput, StealthSendPayload, StealthSendResult, StealthClaimResult,
-  // Contract Interactions (Phase 6)
+  // Contract Interactions
   ContractCallPayload, ContractCallResult,
-  // EVM Token Balances (Phase 9)
+  ContractViewPayload, ContractViewResult,
+  // EVM Tokens
   Erc20TokenBalance, GetEvmTokensResult,
+  // Crypto identity (v1.6.0)
+  CryptoIdentity, SharedSecretResult,
+  CipherDecryptResult, CipherEncryptResult,
+  RawStealthOutput, ScannedOutput, ScanOutputsResult,
+  PvacProgressCallback,
+  // ZK signing (v1.6.0)
+  ZkSignInput, ZkSignResult,
+  // Chain reads (v1.6.0)
+  TransactionInfo, WaitForConfirmationOptions,
+  EpochInfo, RecommendedFee,
   // Config
   InitOptions,
   // Events
