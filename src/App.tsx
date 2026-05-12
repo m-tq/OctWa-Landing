@@ -91,6 +91,20 @@ const apps = [
       </svg>
     ),
   },
+  {
+    name: "Octra Name Service",
+    description:
+      "Public name service on Octra Chain with built-in marketplace.",
+    appUrl: "https://ons.octwa.pw/",
+    repoUrl: "https://github.com/m-tq/ONS",
+    screenshotUrl: "ons.png",
+    icon: () => (
+      <svg width="18" height="18" viewBox="0 0 64 64" fill="none">
+        <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" fill="none"/>
+        <text x="32" y="40" textAnchor="middle" fontSize="24" fontWeight="bold" fill="currentColor">@</text>
+      </svg>
+    ),
+  },
 ];
 
 const tools = [
