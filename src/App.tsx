@@ -6,7 +6,6 @@ import {
   useState,
   type CSSProperties,
   type ReactNode,
-  type RefObject,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -43,7 +42,6 @@ import {
   Menu,
   Coins,
 } from "lucide-react";
-import * as THREE from "three";
 
 /* ──────────────────────────── DATA ──────────────────────────── */
 
@@ -1080,267 +1078,6 @@ const CodeBlock = ({ sample, blockId, isCopied, onCopy }: CodeBlockProps) => (
   </div>
 );
 
-/* ──────────────────────────── THREE.JS BACKGROUND ──────────────────────────── */
-
-const useOctraBackground = (containerRef: RefObject<HTMLDivElement>) => {
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const isLiteMode = window.innerWidth <= 768;
-    const NODE_COUNT = isLiteMode ? 260 : 800;
-    const CLUSTER_CENTERS: [number, number][] = [
-      [-0.5, 0.6],
-      [0.5, 0.6],
-      [-0.7, 0.0],
-      [0.7, 0.0],
-      [-0.4, -0.6],
-      [0.4, -0.6],
-    ];
-
-    const vertexShader = `
-      attribute float seed;
-      attribute float clusterId;
-      uniform float uTime;
-      uniform vec2 uResolution;
-      varying float vSeed;
-      varying float vClusterId;
-      varying float vDepth;
-      float hash(float n) { return fract(sin(n) * 43758.5453123); }
-      float noise(vec3 x) {
-        vec3 p = floor(x); vec3 f = fract(x);
-        f = f * f * (3.0 - 2.0 * f);
-        float n = p.x + p.y * 57.0 + 113.0 * p.z;
-        return mix(mix(mix(hash(n), hash(n+1.0), f.x), mix(hash(n+57.0), hash(n+58.0), f.x), f.y),
-                   mix(mix(hash(n+113.0), hash(n+114.0), f.x), mix(hash(n+170.0), hash(n+171.0), f.x), f.y), f.z);
-      }
-      void main() {
-        vSeed = seed; vClusterId = clusterId;
-        vec3 pos = position;
-        float t1 = uTime * 0.3 + seed * 10.0;
-        float orbitRadius = 0.1 + seed * 0.15;
-        float orbitSpeed = 0.3 + clusterId * 0.1;
-        pos.x += sin(t1 * orbitSpeed) * orbitRadius;
-        pos.y += cos(t1 * orbitSpeed * 1.3) * orbitRadius;
-        float t2 = uTime * 0.5 + seed * 20.0;
-        float noiseScale = 0.5;
-        float nx = noise(vec3(pos.xy * noiseScale, t2 * 0.1)) - 0.5;
-        float ny = noise(vec3(pos.yx * noiseScale, t2 * 0.1 + 100.0)) - 0.5;
-        pos.x += nx * 0.2; pos.y += ny * 0.2;
-        vDepth = 0.5 + 0.5 * sin(seed * 6.28);
-        float baseSize = 2.5 + seed * 3.0;
-        float depthScale = 0.7 + vDepth * 0.6;
-        gl_PointSize = baseSize * depthScale;
-        float aspect = uResolution.x / uResolution.y;
-        pos.x /= aspect;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-      }
-    `;
-
-    const fragmentShader = `
-      varying float vSeed; varying float vClusterId; varying float vDepth;
-      uniform float uTime;
-      void main() {
-        vec2 center = gl_PointCoord - vec2(0.5);
-        float dist = length(center);
-        float core = 1.0 - smoothstep(0.0, 0.15, dist);
-        float glow = 1.0 - smoothstep(0.0, 0.5, dist);
-        float alpha = core * 0.8 + glow * 0.4;
-        float colorShift = sin(uTime * 0.2 + vClusterId * 1.5) * 0.5 + 0.5;
-        vec3 color1 = vec3(0.231, 0.337, 0.498);
-        vec3 color2 = vec3(0.318, 0.431, 0.604);
-        vec3 color3 = vec3(0.549, 0.616, 0.714);
-        vec3 color4 = vec3(0.165, 0.247, 0.373);
-        vec3 baseColor = mix(color1, color2, vSeed);
-        baseColor = mix(baseColor, color3, vDepth * 0.3);
-        baseColor = mix(baseColor, color4, colorShift * 0.2);
-        float brightness = 0.9;
-        alpha *= brightness * (0.6 + vDepth * 0.4);
-        if (alpha < 0.01) discard;
-        gl_FragColor = vec4(baseColor * brightness, alpha);
-      }
-    `;
-
-    const lineVertexShader = `
-      attribute float opacity;
-      uniform vec2 uResolution;
-      varying float vOpacity;
-      void main() {
-        vOpacity = opacity;
-        vec3 pos = position;
-        float aspect = uResolution.x / uResolution.y;
-        pos.x /= aspect;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-      }
-    `;
-
-    const lineFragmentShader = `
-      varying float vOpacity;
-      void main() {
-        vec3 color = vec3(0.231, 0.337, 0.498);
-        float alpha = vOpacity * 0.25;
-        gl_FragColor = vec4(color, alpha);
-      }
-    `;
-
-    const width = container.offsetWidth || window.innerWidth;
-    const height = container.offsetHeight || window.innerHeight;
-    const scene = new THREE.Scene();
-    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
-    camera.position.z = 1;
-
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: true,
-      powerPreference: isLiteMode ? "low-power" : "high-performance",
-    });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(
-      isLiteMode
-        ? Math.min(window.devicePixelRatio, 1.25)
-        : Math.min(window.devicePixelRatio, 2),
-    );
-    renderer.setClearColor(0x000000, 0);
-    container.appendChild(renderer.domElement);
-
-    const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(NODE_COUNT * 3);
-    const seeds = new Float32Array(NODE_COUNT);
-    const clusterIds = new Float32Array(NODE_COUNT);
-    const numClusters = CLUSTER_CENTERS.length;
-
-    for (let i = 0; i < NODE_COUNT; i++) {
-      const clusterId = i % numClusters;
-      const [cx, cy] = CLUSTER_CENTERS[clusterId];
-      const angle = Math.random() * Math.PI * 2;
-      const radius = Math.random() * 0.4 + Math.random() * 0.3;
-      positions[i * 3] = cx + Math.cos(angle) * radius;
-      positions[i * 3 + 1] = cy + Math.sin(angle) * radius;
-      positions[i * 3 + 2] = 0;
-      seeds[i] = Math.random();
-      clusterIds[i] = clusterId;
-    }
-
-    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute("seed", new THREE.BufferAttribute(seeds, 1));
-    geometry.setAttribute(
-      "clusterId",
-      new THREE.BufferAttribute(clusterIds, 1),
-    );
-
-    const uniforms = {
-      uTime: { value: 0 },
-      uResolution: { value: new THREE.Vector2(width, height) },
-    };
-    const material = new THREE.ShaderMaterial({
-      uniforms,
-      vertexShader,
-      fragmentShader,
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      depthTest: false,
-    });
-    const points = new THREE.Points(geometry, material);
-    scene.add(points);
-
-    const showLines = !isLiteMode;
-    let lineGeometry: THREE.BufferGeometry | null = null;
-    let lineMaterial: THREE.ShaderMaterial | null = null;
-    let lineUniforms: { uTime: { value: number }; uResolution: { value: THREE.Vector2 } } | null =
-      null;
-
-    if (showLines) {
-      const linePositions: number[] = [];
-      const lineOpacities: number[] = [];
-      const connectionThreshold = 0.25;
-
-      for (let i = 0; i < NODE_COUNT; i++) {
-        for (let j = i + 1; j < NODE_COUNT; j++) {
-          if (clusterIds[i] !== clusterIds[j]) continue;
-          const dx = positions[i * 3] - positions[j * 3];
-          const dy = positions[i * 3 + 1] - positions[j * 3 + 1];
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < connectionThreshold) {
-            linePositions.push(
-              positions[i * 3],
-              positions[i * 3 + 1],
-              0,
-              positions[j * 3],
-              positions[j * 3 + 1],
-              0,
-            );
-            const opacity = 1.0 - dist / connectionThreshold;
-            lineOpacities.push(opacity, opacity);
-          }
-        }
-      }
-
-      lineGeometry = new THREE.BufferGeometry();
-      lineGeometry.setAttribute(
-        "position",
-        new THREE.Float32BufferAttribute(linePositions, 3),
-      );
-      lineGeometry.setAttribute(
-        "opacity",
-        new THREE.Float32BufferAttribute(lineOpacities, 1),
-      );
-
-      lineUniforms = {
-        uTime: { value: 0 },
-        uResolution: { value: new THREE.Vector2(width, height) },
-      };
-      lineMaterial = new THREE.ShaderMaterial({
-        uniforms: lineUniforms,
-        vertexShader: lineVertexShader,
-        fragmentShader: lineFragmentShader,
-        transparent: true,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-      });
-      const lines = new THREE.LineSegments(lineGeometry, lineMaterial);
-      scene.add(lines);
-    }
-
-    const startTime = performance.now();
-    let frameId = 0;
-
-    const animate = () => {
-      const elapsed = (performance.now() - startTime) / 1000;
-      uniforms.uTime.value = elapsed;
-      if (lineUniforms) lineUniforms.uTime.value = elapsed;
-      renderer.render(scene, camera);
-      frameId = requestAnimationFrame(animate);
-    };
-    animate();
-
-    const handleResize = () => {
-      const w = container.offsetWidth || window.innerWidth;
-      const h = container.offsetHeight || window.innerHeight;
-      renderer.setSize(w, h);
-      uniforms.uResolution.value.set(w, h);
-      if (lineUniforms) lineUniforms.uResolution.value.set(w, h);
-    };
-    window.addEventListener("resize", handleResize);
-    const resizeObserver = new ResizeObserver(handleResize);
-    resizeObserver.observe(container);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      resizeObserver.disconnect();
-      cancelAnimationFrame(frameId);
-      geometry.dispose();
-      material.dispose();
-      lineGeometry?.dispose();
-      lineMaterial?.dispose();
-      renderer.dispose();
-      if (renderer.domElement.parentElement === container) {
-        container.removeChild(renderer.domElement);
-      }
-    };
-  }, [containerRef]);
-};
-
 /* ──────────────── Page Transition Variants ──────────────── */
 const pageVariants = {
   initial: { opacity: 0, y: 16 },
@@ -1355,13 +1092,9 @@ const pageVariants = {
     transition: { duration: 0.25, ease: "easeIn" as const },
   },
 };
-
 /* ──────────────────────────── MAIN APP ──────────────────────────── */
 
 export default function App() {
-  const backgroundRef = useRef<HTMLDivElement>(null);
-  useOctraBackground(backgroundRef);
-
   /* ── State ── */
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     const stored = window.localStorage.getItem("octwa-theme");
@@ -2014,9 +1747,6 @@ export default function App() {
 
         {/* Main Content */}
         <main className="main-content">
-          {/* Three.js Background — inside main-content so center follows content */}
-          <div ref={backgroundRef} className="octra-background" />
-
           <AnimatePresence mode="wait">
             {/* ════════════ MAIN PAGE ════════════ */}
             {currentPage === "main" && (

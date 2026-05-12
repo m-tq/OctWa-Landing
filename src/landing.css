@@ -192,15 +192,6 @@ h3 {
    7. LAYOUT — Header / Sidebar / Main / Footer
    ============================================ */
 
-/* --- Three.js Background — lives inside .main-content so its center matches --- */
-.octra-background {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-    pointer-events: none;
-    z-index: 0;
-}
-
 /* --- Fixed Header --- */
 .top-nav {
     position: fixed;
@@ -2038,10 +2029,6 @@ h3 {
 
     .lightbox-close {
         top: -35px;
-    }
-
-    .octra-background {
-        opacity: 0.35;
     }
 
     p,
